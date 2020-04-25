@@ -132,7 +132,7 @@ void create_instance(VkInstance *instance, DebugCallback dbg_cback) {
         "VK_LAYER_KHRONOS_validation",
     };
     uint32_t val_layer_ct = 1;
-    assert(check_validation(val_layers, val_layer_ct) == 0);
+    assert(check_layers(val_layer_ct, val_layers) == 0);
 
     // VkApplicationInfo
     VkApplicationInfo app_info = {0};
@@ -169,7 +169,7 @@ void create_instance(VkInstance *instance, DebugCallback dbg_cback) {
     free(extensions);
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
+VKAPI_ATTR VkBool32 VKAPI_CALL default_debug_callback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -180,7 +180,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
     return VK_FALSE;
 }
 
-int check_validation(char **req_layers, uint32_t req_layer_ct) {
+int check_layers(uint32_t req_layer_ct, char **req_layers) {
     // Ensures all instance validation layers named in <req_layers> are present.
     // Returns 0 if they are, -1 on failure to find a layer.
 
@@ -216,7 +216,7 @@ int check_validation(char **req_layers, uint32_t req_layer_ct) {
     return 0;
 }
 
-int check_req_exts(uint32_t req_ext_ct, char **req_exts) {
+int check_exts(uint32_t req_ext_ct, char **req_exts) {
     // Returns 0 if all extensions were found, -1 otherwise
 
     uint32_t real_ext_ct;
@@ -251,14 +251,16 @@ void get_extensions(uint32_t *extension_ct, char **extensions) {
     // get list of extensions GLFW requires, and ensure they exist
     uint32_t glfw_ext_ct;
     const char **glfw_exts = glfwGetRequiredInstanceExtensions(&glfw_ext_ct);
-    assert(check_req_exts(glfw_ext_ct, (char **) glfw_exts) == 0);
+
+    assert(glfw_exts != NULL);
+    assert(check_exts(glfw_ext_ct, (char **) glfw_exts) == 0);
 
     // ensure the other extensions we want exist too
     char *our_exts[] = {
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
     };
     uint32_t our_ext_ct = sizeof(our_exts) / sizeof(our_exts[0]);
-    assert(check_req_exts(our_ext_ct, our_exts) == 0);
+    assert(check_exts(our_ext_ct, our_exts) == 0);
 
     // write both into <extensions>
     for (int i = 0; i < glfw_ext_ct; i++) {

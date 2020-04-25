@@ -17,11 +17,12 @@ typedef VkResult (*DebugLoader) (
     VkDebugUtilsMessengerEXT **
 );
 
-int check_req_exts(uint32_t req_ext_ct, char **req_exts);
+// Returns 0 if all extensions were found, -1 otherwise
+int check_exts(uint32_t req_ext_ct, char **req_exts);
 
 void create_instance(VkInstance *instance, DebugCallback dbg_cback);
 
-int check_validation(char **req_layers, uint32_t req_layer_ct);
+int check_layers(uint32_t req_layer_ct, char **req_layers);
 
 void init_debug(VkInstance *instance, DebugCallback dbg_cback);
 
@@ -29,16 +30,16 @@ void get_physical_device(VkInstance instance, VkPhysicalDevice *phys_dev);
 
 uint32_t get_queue_fam(VkPhysicalDevice phys_dev);
 
-void get_queue(VkDevice device, uint32_t queue_fam, VkQueue *queue);
-
-void get_extensions(uint32_t *extension_ct, char **extensions);
-
 void create_device(
     VkInstance *instance,
     VkPhysicalDevice phys_dev,
     uint32_t queue_fam,
     VkDevice *device
 );
+
+void get_queue(VkDevice device, uint32_t queue_fam, VkQueue *queue);
+
+void get_extensions(uint32_t *extension_ct, char **extensions);
 
 void populate_dbg_info(
     VkDebugUtilsMessengerCreateInfoEXT *dbg_info,
@@ -51,7 +52,7 @@ void create_dbg_msgr(
     VkDebugUtilsMessengerEXT *dbg_msgr
 );
 
-VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
+VKAPI_ATTR VkBool32 VKAPI_CALL default_debug_callback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
