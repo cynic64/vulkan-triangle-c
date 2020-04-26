@@ -1,5 +1,5 @@
 #include "../tests-src/vkinit.h"
-#include "../tests-src/vk_swapchain.h"
+#include "../tests-src/vk_window.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -11,7 +11,7 @@ int main() {
     s1 = vkinit_suite();
     sr1 = srunner_create(s1);
 
-    s2 = vk_swapchain_suite();
+    s2 = vk_window_suite();
     sr2 = srunner_create(s2);
 
     srunner_run_all(sr1, CK_NORMAL);

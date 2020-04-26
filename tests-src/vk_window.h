@@ -4,6 +4,6 @@
 #include <vulkan/vulkan.h>
 #include <check.h>
 
-Suite *vk_swapchain_suite(void);
+Suite *vk_window_suite(void);
 
 #endif // T_VK_SWAPCHAIN_H_
