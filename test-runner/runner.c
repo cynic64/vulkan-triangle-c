@@ -1,16 +1,22 @@
 #include "../tests-src/vkinit.h"
+#include "../tests-src/vk_swapchain.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 
 int main() {
-    Suite *s;
-    SRunner *sr;
+    Suite *s1, *s2;
+    SRunner *sr1, *sr2;
 
-    s = suite();
-    sr = srunner_create(s);
+    s1 = vkinit_suite();
+    sr1 = srunner_create(s1);
 
-    srunner_run_all(sr, CK_NORMAL);
+    s2 = vk_swapchain_suite();
+    sr2 = srunner_create(s2);
 
-    srunner_free(sr);
+    srunner_run_all(sr1, CK_NORMAL);
+    srunner_run_all(sr2, CK_NORMAL);
+
+    srunner_free(sr1);
+    srunner_free(sr2);
 }

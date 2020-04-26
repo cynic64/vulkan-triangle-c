@@ -47,13 +47,11 @@ uint32_t get_queue_fam(VkPhysicalDevice phys_dev) {
 
     for (int i = 0; i < queue_fam_ct; i++) {
         if (queue_fam_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            printf("Using queue family: %u\n", i);
             free(queue_fam_props);
             return i;
         }
     }
 
-    printf("Could not find a queue family that supports graphics\n");
     free(queue_fam_props);
     exit(1);
 }
@@ -68,7 +66,6 @@ void get_physical_device(VkInstance instance, VkPhysicalDevice *phys_dev) {
     for (int i = 0; i < phys_dev_ct; i++) {
         VkPhysicalDeviceProperties props;
         vkGetPhysicalDeviceProperties(phys_devs[i], &props);
-        printf("Found device: %s\n", props.deviceName);
     }
 
     // use first device
@@ -122,10 +119,6 @@ void create_instance(VkInstance *instance, DebugCallback dbg_cback) {
     heap_2D(&extensions, 16, 255);
 
     get_extensions(&extension_ct, extensions);
-
-    for (int i = 0; i < extension_ct; i++) {
-        printf("Extension: %s\n", extensions[i]);
-    }
 
     // ensure all required validation layers exist
     char *val_layers[] = {
@@ -208,8 +201,6 @@ int check_layers(uint32_t req_layer_ct, char **req_layers) {
             free(real_layers);
             return -1;
         }
-
-        printf("Found required layer %s\n", req_layer_name);
     }
 
     free(real_layers);
@@ -233,7 +224,6 @@ int check_exts(uint32_t req_ext_ct, char **req_exts) {
         int found = 0;
         for (int j = 0; j < real_ext_ct; j++) {
             if (strcmp(req_name, real_ext[j].extensionName) == 0) {
-                printf("Found required extension %s\n", req_name);
                 found = 1;
                 break;
             }
