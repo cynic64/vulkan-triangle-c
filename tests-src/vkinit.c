@@ -1,11 +1,11 @@
-#include "../vktools.h"
-#include "../glfwtools.h"
-
-#include <vulkan/vulkan.h>
-#include <check.h>
-
 #include <stdlib.h>
 #include <stdio.h>
+
+#include <check.h>
+#include <vulkan/vulkan.h>
+
+#include "../src/vktools.h"
+#include "../src/glfwtools.h"
 
 START_TEST (ut_create_instance_before_glfw) {
     VkInstance instance;
@@ -156,8 +156,8 @@ START_TEST (ut_heap_2D) {
 } END_TEST
 
 // needed to test init_debug()
-int dbg_msg_ct = 0;
-VKAPI_ATTR VkBool32 VKAPI_CALL my_debug_callback(
+static int dbg_msg_ct = 0;
+static VKAPI_ATTR VkBool32 VKAPI_CALL my_debug_callback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -242,14 +242,3 @@ Suite *suite(void) {
     return s;
 }
 
-int main() {
-    Suite *s;
-    SRunner *sr;
-
-    s = suite();
-    sr = srunner_create(s);
-
-    srunner_run_all(sr, CK_NORMAL);
-
-    srunner_free(sr);
-}

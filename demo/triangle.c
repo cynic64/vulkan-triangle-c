@@ -1,5 +1,5 @@
-#include "../glfwtools.h"
-#include "../vktools.h"
+#include "../src/glfwtools.h"
+#include "../src/vktools.h"
 
 int main() {
     // initialize GLFW
@@ -7,10 +7,10 @@ int main() {
 
     // create instance
     VkInstance instance;
-    create_instance(&instance);
+    create_instance(&instance, default_debug_callback);
 
     // set up debug messenger
-    init_debug(&instance);
+    init_debug(&instance, default_debug_callback);
 
     // get physical device
     VkPhysicalDevice phys_dev;
