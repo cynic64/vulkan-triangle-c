@@ -8,6 +8,19 @@
 #include "../src/glfwtools.h"
 #include "../src/vk_window.h"
 
+static int dbg_msg_ct = 0;
+static VKAPI_ATTR VkBool32 VKAPI_CALL my_debug_callback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData
+) {
+    printf("VL: %s\n", pCallbackData->pMessage);
+    dbg_msg_ct += 1;
+
+    return VK_FALSE;
+}
+
 static void setup(
     GLFWwindow **window,
     VkInstance *instance,
@@ -17,7 +30,7 @@ static void setup(
     VkQueue *queue
 ) {
     *window = init_glfw();
-    create_instance(instance, default_debug_callback);
+    create_instance(instance, my_debug_callback);
     get_physical_device(*instance, phys_dev);
     *queue_fam = get_queue_fam(*phys_dev);
     create_device(instance, *phys_dev, *queue_fam, device);
@@ -56,7 +69,80 @@ START_TEST (ut_create_surface) {
     // make sure the surface is usable
     VkSurfaceCapabilitiesKHR surface_caps = {0};
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev, surface, &surface_caps);
-    printf("Min images: %u\n", surface_caps.minImageCount);
+    ck_assert(surface_caps.minImageCount == 2);
+}
+
+START_TEST (ut_support) {
+    GLFWwindow *window;
+    VkInstance instance;
+    VkPhysicalDevice phys_dev;
+    uint32_t queue_fam;
+    VkDevice device;
+    VkQueue queue;
+    setup(&window, &instance, &phys_dev, &queue_fam, &device, &queue);
+    VkSurfaceKHR surface;
+    create_surface(instance, window, &surface);
+
+    // make sure the physical device and queue family support presentation
+    VkBool32 support = VK_FALSE;
+    vkGetPhysicalDeviceSurfaceSupportKHR(phys_dev, queue_fam, surface, &support);
+    ck_assert(support == VK_TRUE);
+}
+
+START_TEST (ut_create_swapchain) {
+    GLFWwindow *window;
+    VkInstance instance;
+    VkPhysicalDevice phys_dev;
+    uint32_t queue_fam;
+    VkDevice device;
+    VkQueue queue;
+    setup(&window, &instance, &phys_dev, &queue_fam, &device, &queue);
+    VkSurfaceKHR surface;
+    create_surface(instance, window, &surface);
+
+    VkSwapchainKHR swapchain;
+    create_swapchain(device, &swapchain, WIDTH, HEIGHT);
+
+    // make sure it worked by getting images
+    uint32_t sw_image_ct;
+    vkGetSwapchainImagesKHR(device, swapchain, &sw_image_ct, NULL);
+    VkImage *sw_images = malloc(sizeof(VkImage) * sw_image_ct);
+    VkResult res =
+        vkGetSwapchainImagesKHR(device, swapchain, &sw_image_ct, sw_images);
+    ck_assert(res == VK_SUCCESS);
+}
+
+START_TEST (ut_create_image_views) {
+    GLFWwindow *window;
+    VkInstance instance;
+    VkPhysicalDevice phys_dev;
+    uint32_t queue_fam;
+    VkDevice device;
+    VkQueue queue;
+    setup(&window, &instance, &phys_dev, &queue_fam, &device, &queue);
+    VkSurfaceKHR surface;
+    create_surface(instance, window, &surface);
+    VkSwapchainKHR swapchain;
+    create_swapchain(device, &swapchain, WIDTH, HEIGHT);
+
+    uint32_t sw_image_view_ct = 0;
+    create_swapchain_image_views(device, swapchain, &sw_image_view_ct, NULL);
+    ck_assert(sw_image_view_ct > 0);
+    VkImageView *sw_image_views = malloc(sizeof(VkImageView) * sw_image_view_ct);
+    create_swapchain_image_views(
+        device,
+        swapchain,
+        &sw_image_view_ct,
+        sw_image_views
+    );
+
+    // make sure each image view is valid by destroying each one and making sure
+    // no validation layers complain
+    for (int i = 0; i < sw_image_view_ct; i++) {
+        vkDestroyImageView(device, sw_image_views[i], NULL);
+    }
+
+    ck_assert(dbg_msg_ct == 0);
 }
 
 Suite *vk_window_suite(void) {
@@ -71,6 +157,18 @@ Suite *vk_window_suite(void) {
     TCase *tc2 = tcase_create("Create surface");
     tcase_add_test(tc2, ut_create_surface);
     suite_add_tcase(s, tc2);
+
+    TCase *tc3 = tcase_create("Physical device/queue family support presentation");
+    tcase_add_test(tc3, ut_support);
+    suite_add_tcase(s, tc3);
+
+    TCase *tc4 = tcase_create("Create swapchain");
+    tcase_add_test(tc4, ut_create_swapchain);
+    suite_add_tcase(s, tc4);
+
+    TCase *tc5 = tcase_create("Create image views");
+    tcase_add_test(tc5, ut_create_image_views);
+    suite_add_tcase(s, tc5);
 
     return s;
 }
