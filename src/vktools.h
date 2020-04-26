@@ -20,6 +20,13 @@ typedef VkResult (*DebugLoader) (
 // Returns 0 if all extensions were found, -1 otherwise
 int check_exts(uint32_t req_ext_ct, char **req_exts);
 
+// Same, but for device extensions
+int check_dev_exts(
+    VkPhysicalDevice phys_dev,
+    uint32_t req_ext_ct,
+    char **req_exts
+);
+
 void create_instance(VkInstance *instance, DebugCallback dbg_cback);
 
 int check_layers(uint32_t req_layer_ct, char **req_layers);

@@ -103,6 +103,31 @@ START_TEST (ut_get_queue_fam) {
     ck_assert(VK_QUEUE_GRAPHICS_BIT & queue_fam_flags);
 } END_TEST
 
+START_TEST (ut_check_dev_exts) {
+    init_glfw();
+    VkInstance instance;
+    create_instance(&instance, default_debug_callback);
+    VkPhysicalDevice phys_dev;
+    get_physical_device(instance, &phys_dev);
+
+    int res;
+
+    char *bad_exts[] = {
+        "VK_LAYER_KHRONOS_validation",
+        "VK_LAYER_VALVE_steam_fossilize_64",
+        "potato"
+    };
+    res = check_dev_exts(phys_dev, 3, bad_exts);
+    ck_assert(res == -1);
+
+    char *good_exts[] = {
+        "VK_KHR_swapchain",
+        "VK_KHR_multiview"
+    };
+    res = check_dev_exts(phys_dev, 2, good_exts);
+    ck_assert(res == 0);
+}
+
 START_TEST (ut_create_device) {
     init_glfw();
     VkInstance instance;
@@ -238,6 +263,10 @@ Suite *vkinit_suite(void) {
     TCase *tc10 = tcase_create("Validation layers");
     tcase_add_test(tc10, ut_init_debug);
     suite_add_tcase(s, tc10);
+
+    TCase *tc11 = tcase_create("Check device extensions");
+    tcase_add_test(tc11, ut_check_dev_exts);
+    suite_add_tcase(s, tc11);
 
     return s;
 }

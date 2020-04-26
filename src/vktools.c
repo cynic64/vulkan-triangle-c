@@ -13,6 +13,13 @@ void get_queue(VkDevice device, uint32_t queue_fam, VkQueue *queue) {
 }
 
 void create_device(VkInstance *instance, VkPhysicalDevice phys_dev, uint32_t queue_fam, VkDevice *device) {
+    // make sure swapchain extension is available
+    char *exts[] = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+    uint32_t ext_ct = 1;
+    assert(check_dev_exts(phys_dev, ext_ct, exts) == 0);
+
     // VkDeviceQueueCreateInfo
     VkDeviceQueueCreateInfo queue_info = {0};
     queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -30,7 +37,8 @@ void create_device(VkInstance *instance, VkPhysicalDevice phys_dev, uint32_t que
     device_info.pQueueCreateInfos = &queue_info;
     device_info.queueCreateInfoCount = 1;
     device_info.pEnabledFeatures = &dev_features;
-    device_info.enabledExtensionCount = 0;
+    device_info.enabledExtensionCount = ext_ct;
+    device_info.ppEnabledExtensionNames = (const char * const *) exts;
     device_info.enabledLayerCount = 0;
 
     VkResult res = vkCreateDevice(phys_dev, &device_info, NULL, device);
@@ -216,6 +224,41 @@ int check_exts(uint32_t req_ext_ct, char **req_exts) {
     VkExtensionProperties *real_ext =
         malloc(sizeof(VkExtensionProperties) * real_ext_ct);
     vkEnumerateInstanceExtensionProperties(NULL, &real_ext_ct, real_ext);
+
+    // go through all required extensions and ensure they exist
+    for (int i = 0; i < req_ext_ct; i++) {
+        const char *req_name = req_exts[i];
+
+        int found = 0;
+        for (int j = 0; j < real_ext_ct; j++) {
+            if (strcmp(req_name, real_ext[j].extensionName) == 0) {
+                found = 1;
+                break;
+            }
+        }
+
+        if (!found) return -1;
+    }
+
+    free(real_ext);
+
+    return 0;
+}
+
+int check_dev_exts(
+    VkPhysicalDevice phys_dev,
+    uint32_t req_ext_ct,
+    char **req_exts
+) {
+    // Returns 0 if all extensions were found, -1 otherwise
+
+    uint32_t real_ext_ct;
+    vkEnumerateDeviceExtensionProperties(phys_dev, NULL, &real_ext_ct, NULL);
+
+    VkExtensionProperties *real_ext =
+        malloc(sizeof(VkExtensionProperties) * real_ext_ct);
+    vkEnumerateDeviceExtensionProperties(
+        phys_dev, NULL, &real_ext_ct, real_ext);
 
     // go through all required extensions and ensure they exist
     for (int i = 0; i < req_ext_ct; i++) {

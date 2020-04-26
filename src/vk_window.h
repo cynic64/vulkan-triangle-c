@@ -11,7 +11,10 @@ void create_surface(
 );
 
 void create_swapchain(
+    VkPhysicalDevice phys_dev,
     VkDevice device,
+    uint32_t queue_fam,
+    VkSurfaceKHR surface,
     VkSwapchainKHR *swapchain,
     uint32_t width,
     uint32_t height

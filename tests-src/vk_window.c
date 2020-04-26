@@ -101,11 +101,20 @@ START_TEST (ut_create_swapchain) {
     create_surface(instance, window, &surface);
 
     VkSwapchainKHR swapchain;
-    create_swapchain(device, &swapchain, WIDTH, HEIGHT);
+    create_swapchain(
+        phys_dev,
+        device,
+        queue_fam,
+        surface,
+        &swapchain,
+        WIDTH,
+        HEIGHT
+    );
 
     // make sure it worked by getting images
     uint32_t sw_image_ct;
     vkGetSwapchainImagesKHR(device, swapchain, &sw_image_ct, NULL);
+    ck_assert(sw_image_ct > 0);
     VkImage *sw_images = malloc(sizeof(VkImage) * sw_image_ct);
     VkResult res =
         vkGetSwapchainImagesKHR(device, swapchain, &sw_image_ct, sw_images);
@@ -123,7 +132,7 @@ START_TEST (ut_create_image_views) {
     VkSurfaceKHR surface;
     create_surface(instance, window, &surface);
     VkSwapchainKHR swapchain;
-    create_swapchain(device, &swapchain, WIDTH, HEIGHT);
+    create_swapchain(phys_dev, device, queue_fam, surface, &swapchain, WIDTH, HEIGHT);
 
     uint32_t sw_image_view_ct = 0;
     create_swapchain_image_views(device, swapchain, &sw_image_view_ct, NULL);
