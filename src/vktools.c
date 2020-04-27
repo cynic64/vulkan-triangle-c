@@ -81,9 +81,13 @@ void get_physical_device(VkInstance instance, VkPhysicalDevice *phys_dev) {
     free(phys_devs);
 }
 
-void init_debug(VkInstance *instance, DebugCallback dbg_cback) {
+void init_debug(
+    VkInstance *instance,
+    DebugCallback dbg_cback,
+    void *pUserData
+) {
     VkDebugUtilsMessengerCreateInfoEXT dbg_info = {0};
-    populate_dbg_info(&dbg_info, dbg_cback);
+    populate_dbg_info(&dbg_info, dbg_cback, pUserData);
 
     VkDebugUtilsMessengerEXT dbg_msgr;
     create_dbg_msgr(*instance, &dbg_info, &dbg_msgr);
@@ -106,7 +110,8 @@ void create_dbg_msgr(
 
 void populate_dbg_info(
     VkDebugUtilsMessengerCreateInfoEXT *dbg_info,
-    DebugCallback dbg_cback
+    DebugCallback dbg_cback,
+    void *pUserData
 ) {
     dbg_info->sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     dbg_info->messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
@@ -117,9 +122,14 @@ void populate_dbg_info(
         | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
         | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     dbg_info->pfnUserCallback = dbg_cback;
+    dbg_info->pUserData = pUserData;
 }
 
-void create_instance(VkInstance *instance, DebugCallback dbg_cback) {
+void create_instance(
+    VkInstance *instance,
+    DebugCallback dbg_cback,
+    void *pUserData
+) {
     // get required instance extensions, and ensure they exist
     uint32_t extension_ct;
     // maximum 16 extensions, 255 characters each
@@ -157,7 +167,7 @@ void create_instance(VkInstance *instance, DebugCallback dbg_cback) {
 
     // enable debugging during instance creation/destruction
     VkDebugUtilsMessengerCreateInfoEXT dbg_info;
-    populate_dbg_info(&dbg_info, dbg_cback);
+    populate_dbg_info(&dbg_info, dbg_cback, pUserData);
     instance_info.pNext = &dbg_info;
 
     // create
@@ -177,6 +187,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL default_debug_callback(
     void* pUserData
 ) {
     printf("Validation layer: %s\n", pCallbackData->pMessage);
+
+    if (pUserData != NULL) (*(int*)pUserData)++;
 
     return VK_FALSE;
 }

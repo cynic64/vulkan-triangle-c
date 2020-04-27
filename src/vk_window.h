@@ -1,6 +1,8 @@
 #ifndef VK_WINDOW_H_
 #define VK_WINDOW_H_
 
+#define SW_FORMAT VK_FORMAT_B8G8R8A8_SRGB
+
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 

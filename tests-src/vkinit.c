@@ -9,14 +9,14 @@
 
 START_TEST (ut_create_instance_before_glfw) {
     VkInstance instance;
-    create_instance(&instance, default_debug_callback);
+    create_instance(&instance, default_debug_callback, NULL);
 } END_TEST
 
 START_TEST (ut_create_instance) {
     init_glfw();
 
     VkInstance instance;
-    create_instance(&instance, default_debug_callback);
+    create_instance(&instance, default_debug_callback, NULL);
     ck_assert(instance != NULL);
 
     // make sure the instance is actually usable too
@@ -68,7 +68,7 @@ START_TEST (ut_check_layers) {
 START_TEST (ut_get_physical_device) {
     init_glfw();
     VkInstance instance;
-    create_instance(&instance, default_debug_callback);
+    create_instance(&instance, default_debug_callback, NULL);
 
     VkPhysicalDevice phys_dev;
     get_physical_device(instance, &phys_dev);
@@ -85,7 +85,7 @@ START_TEST (ut_get_physical_device) {
 START_TEST (ut_get_queue_fam) {
     init_glfw();
     VkInstance instance;
-    create_instance(&instance, default_debug_callback);
+    create_instance(&instance, default_debug_callback, NULL);
     VkPhysicalDevice phys_dev;
     get_physical_device(instance, &phys_dev);
 
@@ -106,7 +106,7 @@ START_TEST (ut_get_queue_fam) {
 START_TEST (ut_check_dev_exts) {
     init_glfw();
     VkInstance instance;
-    create_instance(&instance, default_debug_callback);
+    create_instance(&instance, default_debug_callback, NULL);
     VkPhysicalDevice phys_dev;
     get_physical_device(instance, &phys_dev);
 
@@ -131,7 +131,7 @@ START_TEST (ut_check_dev_exts) {
 START_TEST (ut_create_device) {
     init_glfw();
     VkInstance instance;
-    create_instance(&instance, default_debug_callback);
+    create_instance(&instance, default_debug_callback, NULL);
     VkPhysicalDevice phys_dev;
     get_physical_device(instance, &phys_dev);
     uint32_t queue_fam = get_queue_fam(phys_dev);
@@ -155,7 +155,7 @@ START_TEST (ut_create_device) {
 START_TEST (ut_get_queue) {
     init_glfw();
     VkInstance instance;
-    create_instance(&instance, default_debug_callback);
+    create_instance(&instance, default_debug_callback, NULL);
     VkPhysicalDevice phys_dev;
     get_physical_device(instance, &phys_dev);
     uint32_t queue_fam = get_queue_fam(phys_dev);
@@ -180,30 +180,19 @@ START_TEST (ut_heap_2D) {
     }
 } END_TEST
 
-// needed to test init_debug()
-static int dbg_msg_ct = 0;
-static VKAPI_ATTR VkBool32 VKAPI_CALL my_debug_callback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT messageType,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-    void* pUserData
-) {
-    dbg_msg_ct += 1;
-
-    return VK_FALSE;
-}
-
 START_TEST(ut_init_debug) {
+    int dbg_msg_ct = 0;
+
     init_glfw();
     VkInstance instance;
-    create_instance(&instance, default_debug_callback);
+    create_instance(&instance, default_debug_callback, &dbg_msg_ct);
     VkPhysicalDevice phys_dev;
     get_physical_device(instance, &phys_dev);
     uint32_t queue_fam = get_queue_fam(phys_dev);
     VkDevice device;
     create_device(&instance, phys_dev, queue_fam, &device);
 
-    init_debug(&instance, my_debug_callback);
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct);
 
     // test by trying to create a 0-size buffer and making sure we receive
     // messages

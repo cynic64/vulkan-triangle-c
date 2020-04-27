@@ -30,7 +30,7 @@ static void setup(
     VkQueue *queue
 ) {
     *window = init_glfw();
-    create_instance(instance, my_debug_callback);
+    create_instance(instance, my_debug_callback, NULL);
     get_physical_device(*instance, phys_dev);
     *queue_fam = get_queue_fam(*phys_dev);
     create_device(instance, *phys_dev, *queue_fam, device);

@@ -4,8 +4,6 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#define SW_FORMAT VK_FORMAT_B8G8R8A8_SRGB
-
 void create_surface(VkInstance instance, GLFWwindow *window, VkSurfaceKHR *surface) {
     VkResult res = glfwCreateWindowSurface(instance, window, NULL, surface);
     assert(res == VK_SUCCESS);

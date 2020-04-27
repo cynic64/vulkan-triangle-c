@@ -27,11 +27,11 @@ int check_dev_exts(
     char **req_exts
 );
 
-void create_instance(VkInstance *instance, DebugCallback dbg_cback);
+void create_instance(VkInstance *instance, DebugCallback dbg_cback, void *pUserData);
 
 int check_layers(uint32_t req_layer_ct, char **req_layers);
 
-void init_debug(VkInstance *instance, DebugCallback dbg_cback);
+void init_debug(VkInstance *instance, DebugCallback dbg_cback, void *pUserData);
 
 void get_physical_device(VkInstance instance, VkPhysicalDevice *phys_dev);
 
@@ -50,7 +50,8 @@ void get_extensions(uint32_t *extension_ct, char **extensions);
 
 void populate_dbg_info(
     VkDebugUtilsMessengerCreateInfoEXT *dbg_info,
-    DebugCallback dbg_cback
+    DebugCallback dbg_cback,
+    void *pUserData
 );
 
 void create_dbg_msgr(
