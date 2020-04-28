@@ -7,6 +7,7 @@
 #include "../src/vktools.h"
 #include "../src/glfwtools.h"
 #include "../src/vk_window.h"
+#include "../src/vk_pipe.h"
 
 static void setup(
     GLFWwindow **window,
@@ -144,7 +145,51 @@ START_TEST (ut_create_image_views) {
     ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
+START_TEST (ut_create_framebuffer) {
+    GLFWwindow *window;
+    VkInstance instance;
+    VkPhysicalDevice phys_dev;
+    uint32_t queue_fam;
+    VkDevice device;
+    VkQueue queue;
+    setup(&window, &instance, &phys_dev, &queue_fam, &device, &queue);
+    int dbg_msg_ct = 0;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct);
+    VkSurfaceKHR surface;
+    create_surface(instance, window, &surface);
+    VkSwapchainKHR swapchain;
+    create_swapchain(phys_dev, device, queue_fam, surface, &swapchain, WIDTH, HEIGHT);
+    uint32_t sw_image_view_ct = 0;
+    create_swapchain_image_views(device, swapchain, &sw_image_view_ct, NULL);
+    ck_assert(sw_image_view_ct > 0);
+    VkImageView *sw_image_views = malloc(sizeof(VkImageView) * sw_image_view_ct);
+    create_swapchain_image_views(
+        device,
+        swapchain,
+        &sw_image_view_ct,
+        sw_image_views
+    );
+    VkRenderPass rpass;
+    create_rpass(device, SW_FORMAT, &rpass);
 
+    for (int i = 0; i < sw_image_view_ct; i++) {
+        VkFramebuffer fb = NULL;
+        create_framebuffer(
+            device,
+            WIDTH,
+            HEIGHT,
+            rpass,
+            sw_image_views[i],
+            &fb
+        );
+
+        ck_assert(fb != NULL);
+
+        vkDestroyFramebuffer(device, fb, NULL);
+    }
+
+    ck_assert(dbg_msg_ct == 0);
+} END_TEST
 
 Suite *vk_window_suite(void) {
     Suite *s;
@@ -170,6 +215,10 @@ Suite *vk_window_suite(void) {
     TCase *tc5 = tcase_create("Create image views");
     tcase_add_test(tc5, ut_create_image_views);
     suite_add_tcase(s, tc5);
+
+    TCase *tc6 = tcase_create("Create framebuffer");
+    tcase_add_test(tc6, ut_create_framebuffer);
+    suite_add_tcase(s, tc6);
 
     return s;
 }

@@ -31,4 +31,13 @@ void create_swapchain_image_views(
     VkImageView *image_views
 );
 
+void create_framebuffer(
+    VkDevice device,
+    uint32_t width,
+    uint32_t height,
+    VkRenderPass rpass,
+    VkImageView image_view,
+    VkFramebuffer *fb
+);
+
 #endif // VK_WINDOW_H_

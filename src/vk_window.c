@@ -95,3 +95,25 @@ void create_swapchain_image_views(
         assert(res == VK_SUCCESS);
     }
 }
+
+void create_framebuffer(
+    VkDevice device,
+    uint32_t width,
+    uint32_t height,
+    VkRenderPass rpass,
+    VkImageView image_view,
+    VkFramebuffer *fb
+) {
+    VkFramebufferCreateInfo info = {0};
+    info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    info.renderPass = rpass;
+    info.attachmentCount = 1;
+    info.pAttachments = &image_view;
+    info.width = width;
+    info.height = height;
+    info.layers = 1;
+
+    VkResult res = vkCreateFramebuffer(device, &info, NULL, fb);
+    assert(res == VK_SUCCESS);
+}
+
