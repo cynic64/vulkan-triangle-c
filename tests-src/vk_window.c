@@ -222,4 +222,3 @@ Suite *vk_window_suite(void) {
 
     return s;
 }
-
