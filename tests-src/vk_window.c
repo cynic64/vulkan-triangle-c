@@ -8,19 +8,6 @@
 #include "../src/glfwtools.h"
 #include "../src/vk_window.h"
 
-static int dbg_msg_ct = 0;
-static VKAPI_ATTR VkBool32 VKAPI_CALL my_debug_callback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT messageType,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-    void* pUserData
-) {
-    printf("VL: %s\n", pCallbackData->pMessage);
-    dbg_msg_ct += 1;
-
-    return VK_FALSE;
-}
-
 static void setup(
     GLFWwindow **window,
     VkInstance *instance,
@@ -30,7 +17,7 @@ static void setup(
     VkQueue *queue
 ) {
     *window = init_glfw();
-    create_instance(instance, my_debug_callback, NULL);
+    create_instance(instance, default_debug_callback, NULL);
     get_physical_device(*instance, phys_dev);
     *queue_fam = get_queue_fam(*phys_dev);
     create_device(instance, *phys_dev, *queue_fam, device);
@@ -70,7 +57,7 @@ START_TEST (ut_create_surface) {
     VkSurfaceCapabilitiesKHR surface_caps = {0};
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev, surface, &surface_caps);
     ck_assert(surface_caps.minImageCount == 2);
-}
+} END_TEST
 
 START_TEST (ut_support) {
     GLFWwindow *window;
@@ -87,7 +74,7 @@ START_TEST (ut_support) {
     VkBool32 support = VK_FALSE;
     vkGetPhysicalDeviceSurfaceSupportKHR(phys_dev, queue_fam, surface, &support);
     ck_assert(support == VK_TRUE);
-}
+} END_TEST
 
 START_TEST (ut_create_swapchain) {
     GLFWwindow *window;
@@ -119,7 +106,7 @@ START_TEST (ut_create_swapchain) {
     VkResult res =
         vkGetSwapchainImagesKHR(device, swapchain, &sw_image_ct, sw_images);
     ck_assert(res == VK_SUCCESS);
-}
+} END_TEST
 
 START_TEST (ut_create_image_views) {
     GLFWwindow *window;
@@ -133,6 +120,9 @@ START_TEST (ut_create_image_views) {
     create_surface(instance, window, &surface);
     VkSwapchainKHR swapchain;
     create_swapchain(phys_dev, device, queue_fam, surface, &swapchain, WIDTH, HEIGHT);
+
+    int dbg_msg_ct = 0;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct);
 
     uint32_t sw_image_view_ct = 0;
     create_swapchain_image_views(device, swapchain, &sw_image_view_ct, NULL);
@@ -152,7 +142,9 @@ START_TEST (ut_create_image_views) {
     }
 
     ck_assert(dbg_msg_ct == 0);
-}
+} END_TEST
+
+
 
 Suite *vk_window_suite(void) {
     Suite *s;
