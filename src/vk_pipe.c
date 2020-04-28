@@ -75,12 +75,22 @@ void create_rpass(VkDevice device, VkFormat format, VkRenderPass *rpass) {
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_attach_ref;
 
+    VkSubpassDependency dep = {0};
+    dep.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dep.dstSubpass = 0;
+    dep.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dep.srcAccessMask = 0;
+    dep.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dep.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     VkRenderPassCreateInfo info = {0};
     info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     info.attachmentCount = 1;
     info.pAttachments = &color_attachment;
     info.subpassCount = 1;
     info.pSubpasses = &subpass;
+    info.dependencyCount = 1;
+    info.pDependencies = &dep;
 
     VkResult res = vkCreateRenderPass(device, &info, NULL, rpass);
     assert(res == VK_SUCCESS);

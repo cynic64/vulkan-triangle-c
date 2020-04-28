@@ -53,11 +53,11 @@ START_TEST (ut_create_cbuf) {
     int dbg_msg_ct = 0;
     window = init_glfw();
     create_instance(&instance, default_debug_callback, &dbg_msg_ct);
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct);
     get_physical_device(instance, &phys_dev);
     uint32_t queue_fam = get_queue_fam(phys_dev);
     create_device(&instance, phys_dev, queue_fam, &device);
     get_queue(device, queue_fam, &queue);
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct);
     VkCommandPool cpool = NULL;
     create_cpool(device, queue_fam, &cpool);
     VkSurfaceKHR surface;
