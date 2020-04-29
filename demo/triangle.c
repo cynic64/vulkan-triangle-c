@@ -8,6 +8,18 @@
 #include <stdlib.h>
 #include <assert.h>
 
+void recreate_swapchain(
+    VkPhysicalDevice phys_dev,
+    VkDevice device,
+    uint32_t queue_fam,
+    VkSurfaceKHR surface,
+    VkRenderPass rpass,
+    VkSwapchainKHR *swapchain,
+    uint32_t *sw_image_view_ct,
+    VkImageView **sw_image_views,
+    VkFramebuffer **fbs
+);
+
 int main() {
     // initialize GLFW
     GLFWwindow *window = init_glfw();
@@ -40,11 +52,12 @@ int main() {
     // surface
     VkSurfaceKHR surface;
     create_surface(instance, window, &surface);
-    uint32_t swidth, sheight = get_dims(phys_dev, surface);
+    uint32_t swidth, sheight;
+    get_dims(phys_dev, surface, &swidth, &sheight);
 
     // swapchain
     VkSwapchainKHR swapchain;
-    create_swapchain(phys_dev, device, queue_fam, surface, &swapchain, WIDTH, HEIGHT);
+    create_swapchain(phys_dev, device, queue_fam, surface, &swapchain, swidth, sheight);
 
     uint32_t sw_image_view_ct = 0;
     create_swapchain_image_views(device, swapchain, &sw_image_view_ct, NULL);
@@ -73,8 +86,8 @@ int main() {
         VkFramebuffer fb = NULL;
         create_framebuffer(
             device,
-            WIDTH,
-            HEIGHT,
+            swidth,
+            sheight,
             rpass,
             sw_image_views[i],
             &fbs[i]
@@ -169,8 +182,8 @@ int main() {
             cpool,
             rpass,
             fb,
-            WIDTH,
-            HEIGHT,
+            swidth,
+            sheight,
             pipel,
             &cbuf
         );
@@ -206,19 +219,23 @@ int main() {
 
         res = VK_ERROR_UNKNOWN;
         res = vkQueuePresentKHR(queue, &present_info);
-        printf("Result: %d\n", res);
 
         // maybe recreate
         if (res == VK_ERROR_OUT_OF_DATE_KHR) {
             recreate_swapchain(
-                instance,
+                phys_dev,
                 device,
-                swapchain,
-                sw_image_view_ct,
-                sw_image_views,
-                fbs,
-                // HERE
-        assert(res == VK_SUCCESS);
+                queue_fam,
+                surface,
+                rpass,
+                &swapchain,
+                &sw_image_view_ct,
+                &sw_image_views,
+                &fbs
+            );
+
+            get_dims(phys_dev, surface, &swidth, &sheight);
+        } else assert(res == VK_SUCCESS);
 
         // wait idle
         res = VK_ERROR_UNKNOWN;
@@ -253,4 +270,73 @@ int main() {
     glfw_cleanup(window);
 
     return 0;
+}
+
+void recreate_swapchain(
+    VkPhysicalDevice phys_dev,
+    VkDevice device,
+    uint32_t queue_fam,
+    VkSurfaceKHR surface,
+    VkRenderPass rpass,
+    VkSwapchainKHR *swapchain,
+    uint32_t *sw_image_view_ct,
+    VkImageView **sw_image_views,
+    VkFramebuffer **fbs
+) {
+    vkDeviceWaitIdle(device);
+
+    // get new dimensions
+    uint32_t swidth, sheight;
+    get_dims(phys_dev, surface, &swidth, &sheight);
+
+    // recreate swapchain
+    create_swapchain(
+        phys_dev,
+        device,
+        queue_fam,
+        surface,
+        swapchain,
+        swidth,
+        sheight
+    );
+
+    // recreate swapchain image views
+    // first destroy old image views
+    assert(*sw_image_views != NULL);
+
+    for (int i = 0; i < *sw_image_view_ct; i++)
+        vkDestroyImageView(device, (*sw_image_views)[i], NULL);
+
+    // get new image count and allocate
+    create_swapchain_image_views(device, *swapchain, sw_image_view_ct, NULL);
+    free(*sw_image_views);
+    *sw_image_views = malloc(sizeof(VkImageView) * *sw_image_view_ct);
+
+    // now actually create the IVs
+    create_swapchain_image_views(
+        device,
+        *swapchain,
+        sw_image_view_ct,
+        *sw_image_views
+    );
+
+    // recreate framebuffers
+    // first destroy the old ones
+    assert(*fbs != NULL);
+    for (int i = 0; i < *sw_image_view_ct; i++)
+        vkDestroyFramebuffer(device, (*fbs)[i], NULL);
+
+    free(*fbs);
+    *fbs = malloc(sizeof(VkFramebuffer) * *sw_image_view_ct);
+
+    for (int i = 0; i < *sw_image_view_ct; i++) {
+        create_framebuffer(
+            device,
+            swidth,
+            sheight,
+            rpass,
+            (*sw_image_views)[i],
+            &(*fbs)[i]
+        );
+    }
 }
