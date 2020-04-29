@@ -1,4 +1,4 @@
-#include "../tests-src/vkinit.h"
+#include "../tests-src/vk_init.h"
 #include "../tests-src/vk_window.h"
 #include "../tests-src/vk_pipe.h"
 #include "../tests-src/vk_cbuf.h"
@@ -11,7 +11,7 @@ int main() {
     Suite *s1, *s2, *s3, *s4, *s5;
     SRunner *sr1, *sr2, *sr3, *sr4, *sr5;
 
-    s1 = vkinit_suite();
+    s1 = vk_init_suite();
     sr1 = srunner_create(s1);
 
     s2 = vk_window_suite();

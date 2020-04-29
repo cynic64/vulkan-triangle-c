@@ -208,7 +208,7 @@ START_TEST(ut_init_debug) {
     ck_assert(dbg_msg_ct == 1);
 }
 
-Suite *vkinit_suite(void) {
+Suite *vk_init_suite(void) {
     Suite *s;
 
     s = suite_create("Vulkan Initialization");

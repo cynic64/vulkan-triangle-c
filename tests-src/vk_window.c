@@ -27,7 +27,7 @@ static void setup(
 
 START_TEST (ut_setup) {
     // this is not as thoroughly checked as it could be because there are
-    // already more comprehensive tests for these functions in vkinit.c
+    // already more comprehensive tests for these functions in vk_init.c
     GLFWwindow *window;
     VkInstance instance;
     VkPhysicalDevice phys_dev;
