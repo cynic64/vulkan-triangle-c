@@ -40,6 +40,7 @@ int main() {
     // surface
     VkSurfaceKHR surface;
     create_surface(instance, window, &surface);
+    uint32_t swidth, sheight = get_dims(phys_dev, surface);
 
     // swapchain
     VkSwapchainKHR swapchain;
@@ -205,9 +206,24 @@ int main() {
 
         res = VK_ERROR_UNKNOWN;
         res = vkQueuePresentKHR(queue, &present_info);
+        printf("Result: %d\n", res);
+
+        // maybe recreate
+        if (res == VK_ERROR_OUT_OF_DATE_KHR) {
+            recreate_swapchain(
+                instance,
+                device,
+                swapchain,
+                sw_image_view_ct,
+                sw_image_views,
+                fbs,
+                // HERE
+        assert(res == VK_SUCCESS);
 
         // wait idle
-        vkQueueWaitIdle(queue);
+        res = VK_ERROR_UNKNOWN;
+        res = vkQueueWaitIdle(queue);
+        assert(res == VK_SUCCESS);
 
         // free command buffer
         vkFreeCommandBuffers(device, cpool, 1, &cbuf);

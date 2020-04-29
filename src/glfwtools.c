@@ -13,8 +13,6 @@ GLFWwindow *init_glfw() {
     // don't create an OpenGL context
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
     return glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", NULL, NULL);
 }
 

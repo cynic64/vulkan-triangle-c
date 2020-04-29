@@ -64,8 +64,10 @@ START_TEST (ut_create_cbuf) {
     create_cpool(device, queue_fam, &cpool);
     VkSurfaceKHR surface;
     create_surface(instance, window, &surface);
+    uint32_t swidth, sheight;
+    get_dims(phys_dev, surface, &swidth, &sheight);
     VkSwapchainKHR swapchain;
-    create_swapchain(phys_dev, device, queue_fam, surface, &swapchain, WIDTH, HEIGHT);
+    create_swapchain(phys_dev, device, queue_fam, surface, &swapchain, swidth, sheight);
     uint32_t sw_image_view_ct = 0;
     create_swapchain_image_views(device, swapchain, &sw_image_view_ct, NULL);
     ck_assert(sw_image_view_ct > 0);
@@ -83,8 +85,8 @@ START_TEST (ut_create_cbuf) {
         VkFramebuffer fb = NULL;
         create_framebuffer(
             device,
-            WIDTH,
-            HEIGHT,
+            swidth,
+            sheight,
             rpass,
             sw_image_views[i],
             &fbs[i]
@@ -134,8 +136,8 @@ START_TEST (ut_create_cbuf) {
         cpool,
         rpass,
         fbs[0],
-        WIDTH,
-        HEIGHT,
+        swidth,
+        sheight,
         pipel,
         &cbuf
     );

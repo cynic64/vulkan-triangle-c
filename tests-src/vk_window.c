@@ -50,6 +50,9 @@ START_TEST (ut_create_surface) {
     VkDevice device;
     VkQueue queue;
     setup(&window, &instance, &phys_dev, &queue_fam, &device, &queue);
+    int dbg_msg_ct = 0;
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
 
     VkSurfaceKHR surface;
     create_surface(instance, window, &surface);
@@ -58,6 +61,8 @@ START_TEST (ut_create_surface) {
     VkSurfaceCapabilitiesKHR surface_caps = {0};
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev, surface, &surface_caps);
     ck_assert(surface_caps.minImageCount == 2);
+
+    ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
 START_TEST (ut_support) {
@@ -68,6 +73,9 @@ START_TEST (ut_support) {
     VkDevice device;
     VkQueue queue;
     setup(&window, &instance, &phys_dev, &queue_fam, &device, &queue);
+    int dbg_msg_ct = 0;
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
     VkSurfaceKHR surface;
     create_surface(instance, window, &surface);
 
@@ -75,6 +83,8 @@ START_TEST (ut_support) {
     VkBool32 support = VK_FALSE;
     vkGetPhysicalDeviceSurfaceSupportKHR(phys_dev, queue_fam, surface, &support);
     ck_assert(support == VK_TRUE);
+
+    ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
 START_TEST (ut_create_swapchain) {
@@ -85,8 +95,14 @@ START_TEST (ut_create_swapchain) {
     VkDevice device;
     VkQueue queue;
     setup(&window, &instance, &phys_dev, &queue_fam, &device, &queue);
+    int dbg_msg_ct = 0;
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
     VkSurfaceKHR surface;
     create_surface(instance, window, &surface);
+
+    uint32_t swidth, sheight;
+    get_dims(phys_dev, surface, &swidth, &sheight);
 
     VkSwapchainKHR swapchain;
     create_swapchain(
@@ -95,8 +111,8 @@ START_TEST (ut_create_swapchain) {
         queue_fam,
         surface,
         &swapchain,
-        WIDTH,
-        HEIGHT
+        swidth,
+        sheight
     );
 
     // make sure it worked by getting images
@@ -107,6 +123,8 @@ START_TEST (ut_create_swapchain) {
     VkResult res =
         vkGetSwapchainImagesKHR(device, swapchain, &sw_image_ct, sw_images);
     ck_assert(res == VK_SUCCESS);
+
+    ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
 START_TEST (ut_create_image_views) {
@@ -119,8 +137,10 @@ START_TEST (ut_create_image_views) {
     setup(&window, &instance, &phys_dev, &queue_fam, &device, &queue);
     VkSurfaceKHR surface;
     create_surface(instance, window, &surface);
+    uint32_t swidth, sheight;
+    get_dims(phys_dev, surface, &swidth, &sheight);
     VkSwapchainKHR swapchain;
-    create_swapchain(phys_dev, device, queue_fam, surface, &swapchain, WIDTH, HEIGHT);
+    create_swapchain(phys_dev, device, queue_fam, surface, &swapchain, swidth, sheight);
 
     int dbg_msg_ct = 0;
     VkDebugUtilsMessengerEXT dbg_msgr;
@@ -159,8 +179,10 @@ START_TEST (ut_create_framebuffer) {
     init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
     VkSurfaceKHR surface;
     create_surface(instance, window, &surface);
+    uint32_t swidth, sheight;
+    get_dims(phys_dev, surface, &swidth, &sheight);
     VkSwapchainKHR swapchain;
-    create_swapchain(phys_dev, device, queue_fam, surface, &swapchain, WIDTH, HEIGHT);
+    create_swapchain(phys_dev, device, queue_fam, surface, &swapchain, swidth, sheight);
     uint32_t sw_image_view_ct = 0;
     create_swapchain_image_views(device, swapchain, &sw_image_view_ct, NULL);
     ck_assert(sw_image_view_ct > 0);
@@ -178,8 +200,8 @@ START_TEST (ut_create_framebuffer) {
         VkFramebuffer fb = NULL;
         create_framebuffer(
             device,
-            WIDTH,
-            HEIGHT,
+            swidth,
+            sheight,
             rpass,
             sw_image_views[i],
             &fb
@@ -189,6 +211,42 @@ START_TEST (ut_create_framebuffer) {
 
         vkDestroyFramebuffer(device, fb, NULL);
     }
+
+    ck_assert(dbg_msg_ct == 0);
+} END_TEST
+
+START_TEST (ut_get_dims) {
+    int dbg_msg_ct = 0;
+
+    uint32_t true_width = 800;
+    uint32_t true_height = 800;
+    // we can't use init_glfw because we need to disable resizing
+    glfwInit();
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    GLFWwindow *window = glfwCreateWindow(
+        true_width,
+        true_height,
+        "Vulkan",
+        NULL,
+        NULL
+    );
+    VkInstance instance;
+    create_instance(&instance, default_debug_callback, &dbg_msg_ct);
+
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
+    VkPhysicalDevice phys_dev;
+    get_physical_device(instance, &phys_dev);
+    VkSurfaceKHR surface;
+    create_surface(instance, window, &surface);
+
+    uint32_t swidth = 0;
+    uint32_t sheight = 0;
+    get_dims(phys_dev, surface, &swidth, &sheight);
+
+    ck_assert(swidth == true_width);
+    ck_assert(sheight == true_height);
 
     ck_assert(dbg_msg_ct == 0);
 } END_TEST
@@ -221,6 +279,10 @@ Suite *vk_window_suite(void) {
     TCase *tc6 = tcase_create("Create framebuffer");
     tcase_add_test(tc6, ut_create_framebuffer);
     suite_add_tcase(s, tc6);
+
+    TCase *tc7 = tcase_create("Get dimensions");
+    tcase_add_test(tc7, ut_get_dims);
+    suite_add_tcase(s, tc7);
 
     return s;
 }

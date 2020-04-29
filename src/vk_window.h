@@ -40,4 +40,11 @@ void create_framebuffer(
     VkFramebuffer *fb
 );
 
+void get_dims(
+    VkPhysicalDevice phys_dev,
+    VkSurfaceKHR surface,
+    uint32_t *width,
+    uint32_t *height
+);
+
 #endif // VK_WINDOW_H_

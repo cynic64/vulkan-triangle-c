@@ -117,3 +117,17 @@ void create_framebuffer(
     assert(res == VK_SUCCESS);
 }
 
+void get_dims(
+    VkPhysicalDevice phys_dev,
+    VkSurfaceKHR surface,
+    uint32_t *width,
+    uint32_t *height
+) {
+    VkSurfaceCapabilitiesKHR caps;
+    VkResult res =
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev, surface, &caps);
+    assert(res == VK_SUCCESS);
+
+    *width = caps.currentExtent.width;
+    *height = caps.currentExtent.height;
+}
