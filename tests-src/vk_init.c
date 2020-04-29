@@ -192,7 +192,8 @@ START_TEST(ut_init_debug) {
     VkDevice device;
     create_device(&instance, phys_dev, queue_fam, &device);
 
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct);
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
 
     // test by trying to create a 0-size buffer and making sure we receive
     // messages
@@ -206,7 +207,31 @@ START_TEST(ut_init_debug) {
     VkResult res = vkCreateBuffer(device, &buffer_info, NULL, &buffer);
 
     ck_assert(dbg_msg_ct == 1);
-}
+} END_TEST
+
+START_TEST (ut_destroy_dbg_msgr) {
+    int dbg_msg_ct = 0;
+
+    init_glfw();
+    VkInstance instance;
+    create_instance(&instance, default_debug_callback, &dbg_msg_ct);
+    VkPhysicalDevice phys_dev;
+    get_physical_device(instance, &phys_dev);
+    uint32_t queue_fam = get_queue_fam(phys_dev);
+    VkDevice device;
+    create_device(&instance, phys_dev, queue_fam, &device);
+
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
+
+    vkDestroyDevice(device, NULL);
+    destroy_dbg_msgr(instance, &dbg_msgr);
+
+    // there should now be no validation layers complaining that the debug
+    // messenger wasn't destroyed before the instance
+    vkDestroyInstance(instance, NULL);
+    ck_assert(dbg_msg_ct == 0);
+} END_TEST
 
 Suite *vk_init_suite(void) {
     Suite *s;
@@ -256,6 +281,10 @@ Suite *vk_init_suite(void) {
     TCase *tc11 = tcase_create("Check device extensions");
     tcase_add_test(tc11, ut_check_dev_exts);
     suite_add_tcase(s, tc11);
+
+    TCase *tc12 = tcase_create("Destroy debug messenger");
+    tcase_add_test(tc12, ut_destroy_dbg_msgr);
+    suite_add_tcase(s, tc12);
 
     return s;
 }

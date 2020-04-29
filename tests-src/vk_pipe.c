@@ -35,7 +35,8 @@ START_TEST (ut_create_shmod) {
     uint32_t queue_fam = get_queue_fam(phys_dev);
     VkDevice device = NULL;
     create_device(&instance, phys_dev, queue_fam, &device);
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct);
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
 
     FILE *fp = fopen("assets/testing/test.vert.spv", "rb");
     ck_assert(fp != NULL);
@@ -65,7 +66,8 @@ START_TEST(ut_create_shtage) {
     uint32_t queue_fam = get_queue_fam(phys_dev);
     VkDevice device = NULL;
     create_device(&instance, phys_dev, queue_fam, &device);
-    init_debug(&instance, default_debug_callback, NULL);
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, NULL, &dbg_msgr);
     FILE *fp = fopen("assets/testing/test.vert.spv", "rb");
     ck_assert(fp != NULL);
     size_t buf_size = 0;
@@ -94,7 +96,8 @@ START_TEST (ut_create_layout) {
     uint32_t queue_fam = get_queue_fam(phys_dev);
     VkDevice device;
     create_device(&instance, phys_dev, queue_fam, &device);
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct);
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
 
     VkPipelineLayout layout = NULL;
     create_layout(device, &layout);
@@ -116,7 +119,8 @@ START_TEST (ut_create_rpass) {
     uint32_t queue_fam = get_queue_fam(phys_dev);
     VkDevice device;
     create_device(&instance, phys_dev, queue_fam, &device);
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct);
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
 
     VkRenderPass rpass = NULL;
     create_rpass(device, SW_FORMAT, &rpass);
@@ -137,7 +141,8 @@ START_TEST(ut_create_pipel) {
     uint32_t queue_fam = get_queue_fam(phys_dev);
     VkDevice device;
     create_device(&instance, phys_dev, queue_fam, &device);
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct);
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
 
     // load shaders
     FILE *fp;

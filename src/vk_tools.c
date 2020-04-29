@@ -84,13 +84,29 @@ void get_physical_device(VkInstance instance, VkPhysicalDevice *phys_dev) {
 void init_debug(
     VkInstance *instance,
     DebugCallback dbg_cback,
-    void *pUserData
+    void *pUserData,
+    VkDebugUtilsMessengerEXT *dbg_msgr
 ) {
     VkDebugUtilsMessengerCreateInfoEXT dbg_info = {0};
     populate_dbg_info(&dbg_info, dbg_cback, pUserData);
 
-    VkDebugUtilsMessengerEXT dbg_msgr;
-    create_dbg_msgr(*instance, &dbg_info, &dbg_msgr);
+    create_dbg_msgr(*instance, &dbg_info, dbg_msgr);
+}
+
+void destroy_dbg_msgr(
+    VkInstance instance,
+    VkDebugUtilsMessengerEXT *dbg_msgr
+) {
+    PFN_vkDestroyDebugUtilsMessengerEXT func =
+        (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
+            instance, "vkDestroyDebugUtilsMessengerEXT"
+        );
+
+    assert(func != NULL);
+
+    func(instance, *dbg_msgr, NULL);
+
+    *dbg_msgr = NULL;
 }
 
 void create_dbg_msgr(

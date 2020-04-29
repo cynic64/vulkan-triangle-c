@@ -123,7 +123,8 @@ START_TEST (ut_create_image_views) {
     create_swapchain(phys_dev, device, queue_fam, surface, &swapchain, WIDTH, HEIGHT);
 
     int dbg_msg_ct = 0;
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct);
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
 
     uint32_t sw_image_view_ct = 0;
     create_swapchain_image_views(device, swapchain, &sw_image_view_ct, NULL);
@@ -154,7 +155,8 @@ START_TEST (ut_create_framebuffer) {
     VkQueue queue;
     setup(&window, &instance, &phys_dev, &queue_fam, &device, &queue);
     int dbg_msg_ct = 0;
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct);
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
     VkSurfaceKHR surface;
     create_surface(instance, window, &surface);
     VkSwapchainKHR swapchain;

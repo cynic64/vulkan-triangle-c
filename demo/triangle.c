@@ -19,7 +19,8 @@ int main() {
     create_instance(&instance, default_debug_callback, NULL);
 
     // set up debug messenger (again, NULL is pUserData)
-    init_debug(&instance, default_debug_callback, NULL);
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, NULL, &dbg_msgr);
 
     // get physical device
     VkPhysicalDevice phys_dev;
@@ -131,6 +132,10 @@ int main() {
         &pipel
     );
 
+    // cleanup shader modules
+    vkDestroyShaderModule(device, vs_mod, NULL);
+    vkDestroyShaderModule(device, fs_mod, NULL);
+
     // semaphores
     VkSemaphore image_avail_sem;
     VkSemaphore render_done_sem;
@@ -203,9 +208,32 @@ int main() {
 
         // wait idle
         vkQueueWaitIdle(queue);
+
+        // free command buffer
+        vkFreeCommandBuffers(device, cpool, 1, &cbuf);
     }
 
+    // cleanup
+    for (int i = 0; i < sw_image_view_ct; i++) {
+        vkDestroyImageView(device, sw_image_views[i], NULL);
+        vkDestroyFramebuffer(device, fbs[i], NULL);
+    }
+
+    vkDestroyPipeline(device, pipel, NULL);
+    vkDestroyPipelineLayout(device, layout, NULL);
+    vkDestroySemaphore(device, image_avail_sem, NULL);
+    vkDestroySemaphore(device, render_done_sem, NULL);
+
+    vkDestroyCommandPool(device, cpool, NULL);
+    vkDestroyRenderPass(device, rpass, NULL);
+
+    vkDestroySwapchainKHR(device, swapchain, NULL);
+    vkDestroySurfaceKHR(instance, surface, NULL);
+
+    vkDestroyDevice(device, NULL);
+    destroy_dbg_msgr(instance, &dbg_msgr);
     vkDestroyInstance(instance, NULL);
+
     glfw_cleanup(window);
 
     return 0;

@@ -31,7 +31,17 @@ void create_instance(VkInstance *instance, DebugCallback dbg_cback, void *pUserD
 
 int check_layers(uint32_t req_layer_ct, char **req_layers);
 
-void init_debug(VkInstance *instance, DebugCallback dbg_cback, void *pUserData);
+void init_debug(
+    VkInstance *instance,
+    DebugCallback dbg_cback,
+    void *pUserData,
+    VkDebugUtilsMessengerEXT *dbg_msgr
+);
+
+void destroy_dbg_msgr(
+    VkInstance instance,
+    VkDebugUtilsMessengerEXT *dbg_msgr
+);
 
 void get_physical_device(VkInstance instance, VkPhysicalDevice *phys_dev);
 
