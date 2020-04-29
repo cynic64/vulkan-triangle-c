@@ -4,7 +4,7 @@
 #include <check.h>
 #include <vulkan/vulkan.h>
 
-#include "../src/vktools.h"
+#include "../src/vk_tools.h"
 #include "../src/glfwtools.h"
 #include "../src/vk_window.h"
 #include "../src/vk_pipe.h"

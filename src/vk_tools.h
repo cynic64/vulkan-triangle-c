@@ -1,5 +1,5 @@
-#ifndef VKTOOLS_H_
-#define VKTOOLS_H_
+#ifndef VK_TOOLS_H_
+#define VK_TOOLS_H_
 
 #include <vulkan/vulkan.h>
 
@@ -69,4 +69,4 @@ VKAPI_ATTR VkBool32 VKAPI_CALL default_debug_callback(
 
 void heap_2D(char ***ppp, int major, int minor);
 
-#endif // VKTOOLS_H_
+#endif // VK_TOOLS_H_

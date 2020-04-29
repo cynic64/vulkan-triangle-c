@@ -4,7 +4,7 @@
 #include <check.h>
 #include <vulkan/vulkan.h>
 
-#include "../src/vktools.h"
+#include "../src/vk_tools.h"
 #include "../src/glfwtools.h"
 
 START_TEST (ut_create_instance_before_glfw) {
