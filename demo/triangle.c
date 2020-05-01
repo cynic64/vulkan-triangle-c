@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <time.h>
 
 void recreate_swapchain(
     VkPhysicalDevice phys_dev,
@@ -19,6 +20,9 @@ void recreate_swapchain(
     VkImageView **sw_image_views,
     VkFramebuffer **fbs
 );
+
+// returns the elapsed time in floating-point seconds
+double get_elapsed(struct timespec *s_time);
 
 int main() {
     // initialize GLFW
@@ -156,6 +160,11 @@ int main() {
     create_sem(device, &image_avail_sem);
     create_sem(device, &render_done_sem);
 
+    // timing
+    struct timespec s_time;
+    clock_gettime(CLOCK_MONOTONIC, &s_time);
+    int f_count = 0;
+
     // loop
     while (!glfwWindowShouldClose(window)) {
         VkResult res;
@@ -244,7 +253,14 @@ int main() {
 
         // free command buffer
         vkFreeCommandBuffers(device, cpool, 1, &cbuf);
+
+        f_count++;
     }
+
+    // calculate delta / FPS
+    double elapsed = get_elapsed(&s_time);
+    printf("%d frames in %.4f secs --> %.4f FPS\n", f_count, elapsed, (double) f_count / elapsed);
+    printf("Avg. delta: %.4f ms\n", elapsed / (double) f_count * 1000.0f);
 
     // cleanup
     for (int i = 0; i < sw_image_view_ct; i++) {
@@ -339,4 +355,14 @@ void recreate_swapchain(
             &(*fbs)[i]
         );
     }
+}
+
+double get_elapsed(struct timespec *s_time) {
+    struct timespec e_time;
+    clock_gettime(CLOCK_MONOTONIC, &e_time);
+
+    double secs = e_time.tv_sec - s_time->tv_sec;
+    double subsec = (e_time.tv_nsec - s_time->tv_nsec) / 1000000000.0f;
+
+    return secs + subsec;
 }
