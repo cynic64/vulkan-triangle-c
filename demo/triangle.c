@@ -15,6 +15,8 @@ void recreate_swapchain(
     uint32_t queue_fam,
     VkSurfaceKHR surface,
     VkRenderPass rpass,
+    uint32_t swidth,
+    uint32_t sheight,
     VkSwapchainKHR *swapchain,
     uint32_t *sw_image_view_ct,
     VkImageView **sw_image_views,
@@ -231,19 +233,21 @@ int main() {
 
         // maybe recreate
         if (res == VK_ERROR_OUT_OF_DATE_KHR) {
+            get_dims(phys_dev, surface, &swidth, &sheight);
+
             recreate_swapchain(
                 phys_dev,
                 device,
                 queue_fam,
                 surface,
                 rpass,
+                swidth,
+                sheight,
                 &swapchain,
                 &sw_image_view_ct,
                 &sw_image_views,
                 &fbs
             );
-
-            get_dims(phys_dev, surface, &swidth, &sheight);
         } else assert(res == VK_SUCCESS);
 
         // wait idle
@@ -294,16 +298,14 @@ void recreate_swapchain(
     uint32_t queue_fam,
     VkSurfaceKHR surface,
     VkRenderPass rpass,
+    uint32_t swidth,
+    uint32_t sheight,
     VkSwapchainKHR *swapchain,
     uint32_t *sw_image_view_ct,
     VkImageView **sw_image_views,
     VkFramebuffer **fbs
 ) {
     vkDeviceWaitIdle(device);
-
-    // get new dimensions
-    uint32_t swidth, sheight;
-    get_dims(phys_dev, surface, &swidth, &sheight);
 
     // recreate swapchain
     create_swapchain(
