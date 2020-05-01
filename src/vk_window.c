@@ -153,6 +153,15 @@ void window_acquire(
     *fb = win->fbs[*image_idx];
 }
 
+void window_cleanup(struct Window *win) {
+    for (int i = 0; i < win->image_ct; i++) {
+        vkDestroyFramebuffer(win->device, win->fbs[i], NULL);
+        vkDestroyImageView(win->device, win->views[i], NULL);
+    }
+
+    vkDestroySwapchainKHR(win->device, win->swapchain, NULL);
+}
+
 void create_surface(VkInstance instance, GLFWwindow *window, VkSurfaceKHR *surface) {
     VkResult res = glfwCreateWindowSurface(instance, window, NULL, surface);
     assert(res == VK_SUCCESS);

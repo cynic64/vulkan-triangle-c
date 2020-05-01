@@ -9,26 +9,12 @@
 #include <assert.h>
 #include <time.h>
 
-void recreate_swapchain(
-    VkPhysicalDevice phys_dev,
-    VkDevice device,
-    uint32_t queue_fam,
-    VkSurfaceKHR surface,
-    VkRenderPass rpass,
-    uint32_t swidth,
-    uint32_t sheight,
-    VkSwapchainKHR *swapchain,
-    uint32_t *sw_image_view_ct,
-    VkImageView **sw_image_views,
-    VkFramebuffer **fbs
-);
-
 // returns the elapsed time in floating-point seconds
 double get_elapsed(struct timespec *s_time);
 
 int main() {
     // initialize GLFW
-    GLFWwindow *window = init_glfw();
+    GLFWwindow *gwin = init_glfw();
 
     // create instance
     VkInstance instance;
@@ -57,47 +43,33 @@ int main() {
 
     // surface
     VkSurfaceKHR surface;
-    create_surface(instance, window, &surface);
+    create_surface(instance, gwin, &surface);
     uint32_t swidth, sheight;
     get_dims(phys_dev, surface, &swidth, &sheight);
-
-    // swapchain
-    VkSwapchainKHR swapchain;
-    create_swapchain(phys_dev, device, queue_fam, surface, &swapchain, swidth, sheight);
-
-    uint32_t sw_image_view_ct = 0;
-    create_swapchain_image_views(device, swapchain, &sw_image_view_ct, NULL);
-
-    printf("Swapchain image count: %d\n", sw_image_view_ct);
-
-    VkImageView *sw_image_views = malloc(sizeof(VkImageView) * sw_image_view_ct);
-    create_swapchain_image_views(
-        device,
-        swapchain,
-        &sw_image_view_ct,
-        sw_image_views
-    );
-
-    // command pool
-    VkCommandPool cpool;
-    create_cpool(device, queue_fam, &cpool);
 
     // render pass
     VkRenderPass rpass;
     create_rpass(device, SW_FORMAT, &rpass);
 
-    // framebuffers
-    VkFramebuffer *fbs = malloc(sizeof(VkFramebuffer) * sw_image_view_ct);
-    for (int i = 0; i < sw_image_view_ct; i++) {
-        create_framebuffer(
-            device,
-            swidth,
-            sheight,
-            rpass,
-            sw_image_views[i],
-            &fbs[i]
-        );
-    }
+    // window
+    struct Window win;
+    window_create(
+        gwin,
+        phys_dev,
+        instance,
+        device,
+        surface,
+        queue_fam,
+        queue,
+        rpass,
+        swidth,
+        sheight,
+        &win
+    );
+
+    // command pool
+    VkCommandPool cpool;
+    create_cpool(device, queue_fam, &cpool);
 
     // pipeline layout
     VkPipelineLayout layout;
@@ -167,24 +139,14 @@ int main() {
     int f_count = 0;
 
     // loop
-    while (!glfwWindowShouldClose(window)) {
+    while (!glfwWindowShouldClose(gwin)) {
         VkResult res;
         glfwPollEvents();
 
         // acquire image
         uint32_t image_idx;
-        res = vkAcquireNextImageKHR(
-            device,
-            swapchain,
-            UINT64_MAX,
-            image_avail_sem,
-            NULL,
-            &image_idx
-        );
-        assert(res == VK_SUCCESS);
-
-        // choose framebuffer
-        VkFramebuffer fb = fbs[image_idx];
+        VkFramebuffer fb;
+        window_acquire(&win, image_avail_sem, &image_idx, &fb);
 
         // create command buffer
         VkCommandBuffer cbuf;
@@ -225,7 +187,7 @@ int main() {
         present_info.waitSemaphoreCount = 1;
         present_info.pWaitSemaphores = signal_sems;
         present_info.swapchainCount = 1;
-        present_info.pSwapchains = &swapchain;
+        present_info.pSwapchains = &win.swapchain;
         present_info.pImageIndices = &image_idx;
 
         res = VK_ERROR_UNKNOWN;
@@ -234,21 +196,10 @@ int main() {
         // maybe recreate
         if (res == VK_ERROR_OUT_OF_DATE_KHR) {
             get_dims(phys_dev, surface, &swidth, &sheight);
-
-            recreate_swapchain(
-                phys_dev,
-                device,
-                queue_fam,
-                surface,
-                rpass,
-                swidth,
-                sheight,
-                &swapchain,
-                &sw_image_view_ct,
-                &sw_image_views,
-                &fbs
-            );
-        } else assert(res == VK_SUCCESS);
+            window_recreate_swapchain(&win, swidth, sheight);
+        } else {
+            assert(res == VK_SUCCESS);
+        }
 
         // wait idle
         res = VK_ERROR_UNKNOWN;
@@ -287,76 +238,9 @@ int main() {
     destroy_dbg_msgr(instance, &dbg_msgr);
     vkDestroyInstance(instance, NULL);
 
-    glfw_cleanup(window);
+    glfw_cleanup(gwin);
 
     return 0;
-}
-
-void recreate_swapchain(
-    VkPhysicalDevice phys_dev,
-    VkDevice device,
-    uint32_t queue_fam,
-    VkSurfaceKHR surface,
-    VkRenderPass rpass,
-    uint32_t swidth,
-    uint32_t sheight,
-    VkSwapchainKHR *swapchain,
-    uint32_t *sw_image_view_ct,
-    VkImageView **sw_image_views,
-    VkFramebuffer **fbs
-) {
-    vkDeviceWaitIdle(device);
-
-    // recreate swapchain
-    create_swapchain(
-        phys_dev,
-        device,
-        queue_fam,
-        surface,
-        swapchain,
-        swidth,
-        sheight
-    );
-
-    // recreate swapchain image views
-    // first destroy old image views
-    assert(*sw_image_views != NULL);
-
-    for (int i = 0; i < *sw_image_view_ct; i++)
-        vkDestroyImageView(device, (*sw_image_views)[i], NULL);
-
-    // get new image count and allocate
-    create_swapchain_image_views(device, *swapchain, sw_image_view_ct, NULL);
-    free(*sw_image_views);
-    *sw_image_views = malloc(sizeof(VkImageView) * *sw_image_view_ct);
-
-    // now actually create the IVs
-    create_swapchain_image_views(
-        device,
-        *swapchain,
-        sw_image_view_ct,
-        *sw_image_views
-    );
-
-    // recreate framebuffers
-    // first destroy the old ones
-    assert(*fbs != NULL);
-    for (int i = 0; i < *sw_image_view_ct; i++)
-        vkDestroyFramebuffer(device, (*fbs)[i], NULL);
-
-    free(*fbs);
-    *fbs = malloc(sizeof(VkFramebuffer) * *sw_image_view_ct);
-
-    for (int i = 0; i < *sw_image_view_ct; i++) {
-        create_framebuffer(
-            device,
-            swidth,
-            sheight,
-            rpass,
-            (*sw_image_views)[i],
-            &(*fbs)[i]
-        );
-    }
 }
 
 double get_elapsed(struct timespec *s_time) {

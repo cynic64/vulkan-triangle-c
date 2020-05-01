@@ -51,6 +51,8 @@ void window_acquire(
     VkFramebuffer *fb
 );
 
+void window_cleanup(struct Window *win);
+
 void create_surface(
     VkInstance instance,
     GLFWwindow *win,

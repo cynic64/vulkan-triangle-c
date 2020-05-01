@@ -428,6 +428,42 @@ START_TEST (ut_window_acquire) {
     ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
+START_TEST (ut_window_cleanup) {
+    GLFWwindow *gwin;
+    VkInstance instance;
+    VkPhysicalDevice phys_dev;
+    VkDevice device;
+    VkQueue queue;
+    int dbg_msg_ct = 0;
+    gwin = init_glfw();
+    create_instance(&instance, default_debug_callback, &dbg_msg_ct);
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
+    get_physical_device(instance, &phys_dev);
+    uint32_t queue_fam = get_queue_fam(phys_dev);
+    create_device(&instance, phys_dev, queue_fam, &device);
+    get_queue(device, queue_fam, &queue);
+    VkSurfaceKHR surface;
+    create_surface(instance, gwin, &surface);
+    uint32_t swidth, sheight;
+    get_dims(phys_dev, surface, &swidth, &sheight);
+    VkRenderPass rpass;
+    create_rpass(device, SW_FORMAT, &rpass);
+    struct Window win;
+    window_create(gwin, phys_dev, instance, device, surface, queue_fam, queue, rpass, swidth, sheight, &win);
+
+    window_cleanup(&win);
+
+    vkDestroyRenderPass(device, rpass, NULL);
+
+    vkDestroySurfaceKHR(instance, surface, NULL);
+    vkDestroyDevice(device, NULL);
+    destroy_dbg_msgr(instance, &dbg_msgr);
+    vkDestroyInstance(instance, NULL);
+
+    ck_assert(dbg_msg_ct == 0);
+}
+
 Suite *vk_window_suite(void) {
     Suite *s;
 
@@ -472,6 +508,10 @@ Suite *vk_window_suite(void) {
     TCase *tc10 = tcase_create("Window: Acquire image");
     tcase_add_test(tc10, ut_window_acquire);
     suite_add_tcase(s, tc10);
+
+    TCase *tc11 = tcase_create("Window: Cleanup");
+    tcase_add_test(tc11, ut_window_cleanup);
+    suite_add_tcase(s, tc11);
 
     return s;
 }
