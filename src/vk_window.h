@@ -10,38 +10,50 @@ struct Window {
     // provided
     GLFWwindow *gwin;
     VkPhysicalDevice phys_dev;
-    VkDevice device;
     VkInstance instance;
+    VkDevice device;
+    VkSurfaceKHR surface;
     uint32_t queue_fam;
     VkQueue queue;
     VkRenderPass rpass;
 
     // created
     VkSwapchainKHR swapchain;
-    uint32_t sw_image_ct;
+    uint32_t image_ct;
+    VkImageView *views;
     VkFramebuffer *fbs;
 };
 
 void window_create(
     GLFWwindow *gwin,
     VkPhysicalDevice phys_dev,
-    VkDevice device,
     VkInstance instance,
+    VkDevice device,
+    VkSurfaceKHR surface,
     uint32_t queue_fam,
     VkQueue queue,
     VkRenderPass rpass,
     uint32_t swidth,
     uint32_t sheight,
-    struct Window *window
+    struct Window *win
 );
 
-void window_recreate_swapchain(uint32_t swidth, uint32_t sheight);
+void window_recreate_swapchain(
+    struct Window *win,
+    uint32_t swidth,
+    uint32_t sheight
+);
 
-void window_acquire(VkSemaphore *sem, uint32_t *image_idx, VkFramebuffer *fb);
+void window_acquire(
+    struct Window *win,
+    VkSemaphore sem,
+    uint32_t *image_idx,
+    VkFramebuffer *fb
+);
 
 void create_surface(
     VkInstance instance,
-    GLFWwindow *window,
+    GLFWwindow *win,
     VkSurfaceKHR *surface
 );
 

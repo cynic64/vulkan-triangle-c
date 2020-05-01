@@ -7,21 +7,150 @@
 void window_create(
     GLFWwindow *gwin,
     VkPhysicalDevice phys_dev,
-    VkDevice device,
     VkInstance instance,
+    VkDevice device,
+    VkSurfaceKHR surface,
     uint32_t queue_fam,
     VkQueue queue,
     VkRenderPass rpass,
     uint32_t swidth,
     uint32_t sheight,
-    struct Window *window
+    struct Window *win
 ) {
+    // more readable this way
+    VkSwapchainKHR swapchain;
+    create_swapchain(
+        phys_dev,
+        device,
+        queue_fam,
+        surface,
+        &swapchain,
+        swidth,
+        sheight
+    );
+
+    uint32_t image_ct;
+    create_swapchain_image_views(device, swapchain, &image_ct, NULL);
+
+    VkImageView *views = malloc(sizeof(VkImageView) * image_ct);
+    create_swapchain_image_views(
+        device,
+        swapchain,
+        &image_ct,
+        views
+    );
+
+    // framebuffers
+    VkFramebuffer *fbs = malloc(sizeof(VkFramebuffer) * image_ct);
+    for (int i = 0; i < image_ct; i++) {
+        create_framebuffer(
+            device,
+            swidth,
+            sheight,
+            rpass,
+            views[i],
+            &fbs[i]
+        );
+    }
+
+    // assign
+    win->gwin = gwin;
+    win->phys_dev = phys_dev;
+    win->instance = instance;
+    win->device = device;
+    win->surface = surface;
+    win->queue_fam = queue_fam;
+    win->queue = queue;
+    win->rpass = rpass;
+
+    win->swapchain = swapchain;
+    win->image_ct = image_ct;
+    win->views = views;
+    win->fbs = fbs;
 }
 
-void window_recreate_swapchain(uint32_t swidth, uint32_t sheight) {
+void window_recreate_swapchain(
+    struct Window *win,
+    uint32_t swidth,
+    uint32_t sheight
+) {
+    vkDeviceWaitIdle(win->device);
+
+    // recreate swapchain
+    create_swapchain(
+        win->phys_dev,
+        win->device,
+        win->queue_fam,
+        win->surface,
+        &win->swapchain,
+        swidth,
+        sheight
+    );
+
+    // recreate swapchain image views
+    // first destroy old image views
+    assert(win->views != NULL);
+
+    for (int i = 0; i < win->image_ct; i++) {
+        vkDestroyImageView(win->device, win->views[i], NULL);
+    }
+
+    free(win->views);
+
+    // get new image count and allocate
+    create_swapchain_image_views(win->device, win->swapchain, &win->image_ct, NULL);
+    win->views = malloc(sizeof(VkImageView) * win->image_ct);
+
+    // now actually create the views
+    create_swapchain_image_views(
+        win->device,
+        win->swapchain,
+        &win->image_ct,
+        win->views
+    );
+
+    // recreate framebuffers
+    // first destroy the old ones
+    assert(win->fbs != NULL);
+
+    for (int i = 0; i < win->image_ct; i++) {
+        vkDestroyFramebuffer(win->device, win->fbs[i], NULL);
+    }
+
+    free(win->fbs);
+
+    // create new framebuffers
+    win->fbs = malloc(sizeof(VkFramebuffer) * win->image_ct);
+
+    for (int i = 0; i < win->image_ct; i++) {
+        create_framebuffer(
+            win->device,
+            swidth,
+            sheight,
+            win->rpass,
+            win->views[i],
+            &win->fbs[i]
+        );
+    }
 }
 
-void window_acquire(VkSemaphore *sem, uint32_t *image_idx, VkFramebuffer *fb) {
+void window_acquire(
+    struct Window *win,
+    VkSemaphore sem,
+    uint32_t *image_idx,
+    VkFramebuffer *fb
+) {
+    VkResult res = vkAcquireNextImageKHR(
+        win->device,
+        win->swapchain,
+        UINT64_MAX,
+        sem,
+        NULL,
+        image_idx
+    );
+    assert(res == VK_SUCCESS);
+
+    *fb = win->fbs[*image_idx];
 }
 
 void create_surface(VkInstance instance, GLFWwindow *window, VkSurfaceKHR *surface) {

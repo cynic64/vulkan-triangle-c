@@ -89,7 +89,6 @@ int main() {
     // framebuffers
     VkFramebuffer *fbs = malloc(sizeof(VkFramebuffer) * sw_image_view_ct);
     for (int i = 0; i < sw_image_view_ct; i++) {
-        VkFramebuffer fb = NULL;
         create_framebuffer(
             device,
             swidth,

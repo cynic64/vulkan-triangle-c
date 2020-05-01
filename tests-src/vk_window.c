@@ -9,6 +9,7 @@
 #include "../src/vk_window.h"
 #include "../src/vk_pipe.h"
 #include "../src/vk_sync.h"
+#include "../src/vk_cbuf.h"
 
 static void setup(
     GLFWwindow **window,
@@ -274,8 +275,9 @@ START_TEST (ut_window_create) {
     window_create(
         gwin,
         phys_dev,
-        device,
         instance,
+        device,
+        surface,
         queue_fam,
         queue,
         rpass,
@@ -286,11 +288,13 @@ START_TEST (ut_window_create) {
 
     // verify it works by trying to acquire an image manually
     uint32_t image_idx;
+    VkSemaphore sem;
+    create_sem(device, &sem);
     VkResult res = vkAcquireNextImageKHR(
         win.device,
         win.swapchain,
         UINT64_MAX,
-        NULL,
+        sem,
         NULL,
         &image_idx
     );
@@ -318,17 +322,19 @@ START_TEST (ut_window_recreate) {
     VkRenderPass rpass;
     create_rpass(device, SW_FORMAT, &rpass);
     struct Window win = {0};
-    window_create(gwin, phys_dev, device, instance, queue_fam, queue, rpass, swidth, sheight, &win);
+    window_create(gwin, phys_dev, instance, device, surface, queue_fam, queue, rpass, swidth, sheight, &win);
 
-    window_recreate_swapchain(swidth, sheight);
+    window_recreate_swapchain(&win, swidth, sheight);
 
     // verify by trying to acquire an image, again
     uint32_t image_idx;
+    VkSemaphore sem;
+    create_sem(device, &sem);
     VkResult res = vkAcquireNextImageKHR(
         win.device,
         win.swapchain,
         UINT64_MAX,
-        NULL,
+        sem,
         NULL,
         &image_idx
     );
@@ -342,42 +348,84 @@ START_TEST (ut_window_acquire) {
     GLFWwindow *gwin;
     VkInstance instance;
     VkPhysicalDevice phys_dev;
-    uint32_t queue_fam;
     VkDevice device;
     VkQueue queue;
-    setup(&gwin, &instance, &phys_dev, &queue_fam, &device, &queue);
     int dbg_msg_ct = 0;
+    gwin = init_glfw();
+    create_instance(&instance, default_debug_callback, &dbg_msg_ct);
     VkDebugUtilsMessengerEXT dbg_msgr;
     init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
+    get_physical_device(instance, &phys_dev);
+    uint32_t queue_fam = get_queue_fam(phys_dev);
+    create_device(&instance, phys_dev, queue_fam, &device);
+    get_queue(device, queue_fam, &queue);
+    VkCommandPool cpool = NULL;
+    create_cpool(device, queue_fam, &cpool);
     VkSurfaceKHR surface;
     create_surface(instance, gwin, &surface);
     uint32_t swidth, sheight;
     get_dims(phys_dev, surface, &swidth, &sheight);
     VkRenderPass rpass;
     create_rpass(device, SW_FORMAT, &rpass);
-    struct Window win = {0};
-    window_create(gwin, phys_dev, device, instance, queue_fam, queue, rpass, swidth, sheight, &win);
+    struct Window win;
+    window_create(gwin, phys_dev, instance, device, surface, queue_fam, queue, rpass, swidth, sheight, &win);
 
+    // acquire
+    VkFramebuffer fb;
+    uint32_t image_idx;
     VkSemaphore sem;
     create_sem(device, &sem);
 
-    uint32_t image_idx;
-    VkFramebuffer fb = NULL;
-    window_acquire(&sem, &image_idx, &fb);
+    window_acquire(&win, sem, &image_idx, &fb);
 
-    ck_assert(fb != NULL);
+    // test by trying to use it
+    // layout
+    VkPipelineLayout layout;
+    create_layout(device, &layout);
+    // pipeline
+    FILE *fp;
+    size_t vs_size, fs_size;
+    char *vs_buf, *fs_buf;
+    fp = fopen("assets/testing/test.vert.spv", "rb");
+    ck_assert(fp != NULL);
+    read_bin(fp, &vs_size, NULL);
+    vs_buf = malloc(vs_size);
+    read_bin(fp, &vs_size, vs_buf);
+    fclose(fp);
+    VkShaderModule vs_mod;
+    create_shmod(device, vs_size, vs_buf, &vs_mod);
+    fp = fopen("assets/testing/test.frag.spv", "rb");
+    ck_assert(fp != NULL);
+    read_bin(fp, &fs_size, NULL);
+    fs_buf = malloc(fs_size);
+    read_bin(fp, &fs_size, fs_buf);
+    fclose(fp);
+    VkShaderModule fs_mod;
+    create_shmod(device, fs_size, fs_buf, &fs_mod);
+    VkPipelineShaderStageCreateInfo vs_stage;
+    VkPipelineShaderStageCreateInfo fs_stage;
+    create_shtage(vs_mod, VK_SHADER_STAGE_VERTEX_BIT, &vs_stage);
+    create_shtage(fs_mod, VK_SHADER_STAGE_FRAGMENT_BIT, &fs_stage);
+    VkPipelineShaderStageCreateInfo shtages[] = {vs_stage, fs_stage};
+    VkPipeline pipel;
+    create_pipel(device, 2, shtages, layout, rpass, &pipel);
+    VkCommandBuffer cbuf;
+    create_cbuf(device, cpool, rpass, fb, swidth, sheight, pipel, &cbuf);
+    VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    VkSubmitInfo submit_info = {0};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.waitSemaphoreCount = 0;
+    submit_info.pWaitSemaphores = &sem;
+    submit_info.pWaitDstStageMask = wait_stages;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &cbuf;
+    submit_info.signalSemaphoreCount = 0;
 
-    // verify by trying to present to the acquired image
-    VkPresentInfoKHR present_info = {0};
-    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = &sem;
-    present_info.swapchainCount = 1;
-    present_info.pSwapchains = &win.swapchain;
-    present_info.pImageIndices = &image_idx;
-
-    VkResult res = vkQueuePresentKHR(queue, &present_info);
+    VkResult res = vkQueueSubmit(queue, 1, &submit_info, NULL);
     ck_assert(res == VK_SUCCESS);
+
+    vkQueueWaitIdle(queue);
+    ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
 Suite *vk_window_suite(void) {
