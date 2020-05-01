@@ -6,6 +6,39 @@
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 
+struct Window {
+    // provided
+    GLFWwindow *gwin;
+    VkPhysicalDevice phys_dev;
+    VkDevice device;
+    VkInstance instance;
+    uint32_t queue_fam;
+    VkQueue queue;
+    VkRenderPass rpass;
+
+    // created
+    VkSwapchainKHR swapchain;
+    uint32_t sw_image_ct;
+    VkFramebuffer *fbs;
+};
+
+void window_create(
+    GLFWwindow *gwin,
+    VkPhysicalDevice phys_dev,
+    VkDevice device,
+    VkInstance instance,
+    uint32_t queue_fam,
+    VkQueue queue,
+    VkRenderPass rpass,
+    uint32_t swidth,
+    uint32_t sheight,
+    struct Window *window
+);
+
+void window_recreate_swapchain(uint32_t swidth, uint32_t sheight);
+
+void window_acquire(VkSemaphore *sem, uint32_t *image_idx, VkFramebuffer *fb);
+
 void create_surface(
     VkInstance instance,
     GLFWwindow *window,

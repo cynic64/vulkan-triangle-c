@@ -182,6 +182,7 @@ int main() {
             NULL,
             &image_idx
         );
+        assert(res == VK_SUCCESS);
 
         // choose framebuffer
         VkFramebuffer fb = fbs[image_idx];

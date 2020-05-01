@@ -4,6 +4,26 @@
 #include <assert.h>
 #include <stdlib.h>
 
+void window_create(
+    GLFWwindow *gwin,
+    VkPhysicalDevice phys_dev,
+    VkDevice device,
+    VkInstance instance,
+    uint32_t queue_fam,
+    VkQueue queue,
+    VkRenderPass rpass,
+    uint32_t swidth,
+    uint32_t sheight,
+    struct Window *window
+) {
+}
+
+void window_recreate_swapchain(uint32_t swidth, uint32_t sheight) {
+}
+
+void window_acquire(VkSemaphore *sem, uint32_t *image_idx, VkFramebuffer *fb) {
+}
+
 void create_surface(VkInstance instance, GLFWwindow *window, VkSurfaceKHR *surface) {
     VkResult res = glfwCreateWindowSurface(instance, window, NULL, surface);
     assert(res == VK_SUCCESS);

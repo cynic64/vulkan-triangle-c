@@ -8,6 +8,7 @@
 #include "../src/glfwtools.h"
 #include "../src/vk_window.h"
 #include "../src/vk_pipe.h"
+#include "../src/vk_sync.h"
 
 static void setup(
     GLFWwindow **window,
@@ -251,6 +252,134 @@ START_TEST (ut_get_dims) {
     ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
+START_TEST (ut_window_create) {
+    GLFWwindow *gwin;
+    VkInstance instance;
+    VkPhysicalDevice phys_dev;
+    uint32_t queue_fam;
+    VkDevice device;
+    VkQueue queue;
+    setup(&gwin, &instance, &phys_dev, &queue_fam, &device, &queue);
+    int dbg_msg_ct = 0;
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
+    VkSurfaceKHR surface;
+    create_surface(instance, gwin, &surface);
+    uint32_t swidth, sheight;
+    get_dims(phys_dev, surface, &swidth, &sheight);
+    VkRenderPass rpass;
+    create_rpass(device, SW_FORMAT, &rpass);
+
+    struct Window win = {0};
+    window_create(
+        gwin,
+        phys_dev,
+        device,
+        instance,
+        queue_fam,
+        queue,
+        rpass,
+        swidth,
+        sheight,
+        &win
+    );
+
+    // verify it works by trying to acquire an image manually
+    uint32_t image_idx;
+    VkResult res = vkAcquireNextImageKHR(
+        win.device,
+        win.swapchain,
+        UINT64_MAX,
+        NULL,
+        NULL,
+        &image_idx
+    );
+
+    ck_assert(res == VK_SUCCESS);
+
+    ck_assert(dbg_msg_ct == 0);
+} END_TEST
+
+START_TEST (ut_window_recreate) {
+    GLFWwindow *gwin;
+    VkInstance instance;
+    VkPhysicalDevice phys_dev;
+    uint32_t queue_fam;
+    VkDevice device;
+    VkQueue queue;
+    setup(&gwin, &instance, &phys_dev, &queue_fam, &device, &queue);
+    int dbg_msg_ct = 0;
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
+    VkSurfaceKHR surface;
+    create_surface(instance, gwin, &surface);
+    uint32_t swidth, sheight;
+    get_dims(phys_dev, surface, &swidth, &sheight);
+    VkRenderPass rpass;
+    create_rpass(device, SW_FORMAT, &rpass);
+    struct Window win = {0};
+    window_create(gwin, phys_dev, device, instance, queue_fam, queue, rpass, swidth, sheight, &win);
+
+    window_recreate_swapchain(swidth, sheight);
+
+    // verify by trying to acquire an image, again
+    uint32_t image_idx;
+    VkResult res = vkAcquireNextImageKHR(
+        win.device,
+        win.swapchain,
+        UINT64_MAX,
+        NULL,
+        NULL,
+        &image_idx
+    );
+
+    ck_assert(res == VK_SUCCESS);
+
+    ck_assert(dbg_msg_ct == 0);
+}
+
+START_TEST (ut_window_acquire) {
+    GLFWwindow *gwin;
+    VkInstance instance;
+    VkPhysicalDevice phys_dev;
+    uint32_t queue_fam;
+    VkDevice device;
+    VkQueue queue;
+    setup(&gwin, &instance, &phys_dev, &queue_fam, &device, &queue);
+    int dbg_msg_ct = 0;
+    VkDebugUtilsMessengerEXT dbg_msgr;
+    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
+    VkSurfaceKHR surface;
+    create_surface(instance, gwin, &surface);
+    uint32_t swidth, sheight;
+    get_dims(phys_dev, surface, &swidth, &sheight);
+    VkRenderPass rpass;
+    create_rpass(device, SW_FORMAT, &rpass);
+    struct Window win = {0};
+    window_create(gwin, phys_dev, device, instance, queue_fam, queue, rpass, swidth, sheight, &win);
+
+    VkSemaphore sem;
+    create_sem(device, &sem);
+
+    uint32_t image_idx;
+    VkFramebuffer fb = NULL;
+    window_acquire(&sem, &image_idx, &fb);
+
+    ck_assert(fb != NULL);
+
+    // verify by trying to present to the acquired image
+    VkPresentInfoKHR present_info = {0};
+    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    present_info.waitSemaphoreCount = 1;
+    present_info.pWaitSemaphores = &sem;
+    present_info.swapchainCount = 1;
+    present_info.pSwapchains = &win.swapchain;
+    present_info.pImageIndices = &image_idx;
+
+    VkResult res = vkQueuePresentKHR(queue, &present_info);
+    ck_assert(res == VK_SUCCESS);
+} END_TEST
+
 Suite *vk_window_suite(void) {
     Suite *s;
 
@@ -283,6 +412,18 @@ Suite *vk_window_suite(void) {
     TCase *tc7 = tcase_create("Get dimensions");
     tcase_add_test(tc7, ut_get_dims);
     suite_add_tcase(s, tc7);
+
+    TCase *tc8 = tcase_create("Window: Create");
+    tcase_add_test(tc8, ut_window_create);
+    suite_add_tcase(s, tc8);
+
+    TCase *tc9 = tcase_create("Window: Recreate swapchain");
+    tcase_add_test(tc9, ut_window_recreate);
+    suite_add_tcase(s, tc9);
+
+    TCase *tc10 = tcase_create("Window: Acquire image");
+    tcase_add_test(tc10, ut_window_acquire);
+    suite_add_tcase(s, tc10);
 
     return s;
 }
