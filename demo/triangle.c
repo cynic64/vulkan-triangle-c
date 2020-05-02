@@ -9,6 +9,8 @@
 #include <assert.h>
 #include <time.h>
 
+#define MAX_FRAMES_IN_FLIGHT 4
+
 // returns the elapsed time in floating-point seconds
 double get_elapsed(struct timespec *s_time);
 
@@ -128,10 +130,14 @@ int main() {
     vkDestroyShaderModule(device, fs_mod, NULL);
 
     // semaphores
-    VkSemaphore image_avail_sem;
-    VkSemaphore render_done_sem;
-    create_sem(device, &image_avail_sem);
-    create_sem(device, &render_done_sem);
+    VkSemaphore *image_avail_sems = malloc(sizeof(*image_avail_sems) * MAX_FRAMES_IN_FLIGHT);
+    VkSemaphore *render_done_sems = malloc(sizeof(*render_done_sems) * MAX_FRAMES_IN_FLIGHT);
+    VkSemaphore *swapchain_sems = malloc(sizeof(*swapchain_sems) * MAX_FRAMES_IN_FLIGHT);
+
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        create_sem(device, &image_avail_sems[i]);
+        create_sem(device, &render_done_sems[i]);
+    }
 
     // timing
     struct timespec s_time;
@@ -142,6 +148,18 @@ int main() {
     while (!glfwWindowShouldClose(gwin)) {
         VkResult res;
         glfwPollEvents();
+
+        // choose semaphores
+        int sync_set_idx = f_count % MAX_FRAMES_IN_FLIGHT;
+        VkSemaphore image_avail_sem = image_avail_sems[sync_set_idx];
+        VkSemaphore render_done_sem = render_done_sems[sync_set_idx];
+        VkSemaphore swapchain_fence = swapchain_sems[sync_set_idx];
+
+        // wait for a) previous frame using this sync set to complete
+        //      and b) frame using this swapchain image to complete
+        VkSemaphore wait_fences[2] = {render_done_sem, swapchain_sem};
+        res = VK_ERROR_UNKNOWN;
+        vkWaitForFences(device, 2, wait_fences, VK_TRUE, UINT64_MAX);
 
         // acquire image
         uint32_t image_idx;

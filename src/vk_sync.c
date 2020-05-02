@@ -13,4 +13,13 @@ void create_sem(VkDevice device, VkSemaphore *sem) {
     assert(res == VK_SUCCESS);
 }
 
+void create_fence(VkDevice device, VkFenceCreateFlags flags, VkFence *fence) {
+    VkFenceCreateInfo info = {0};
+    info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    info.flags = flags;
+
+    VkResult res = vkCreateFence(device, &info, NULL, fence);
+    assert(res == VK_SUCCESS);
+}
+
 #endif // VK_CBUF_H_
