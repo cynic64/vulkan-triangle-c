@@ -129,14 +129,20 @@ int main() {
     vkDestroyShaderModule(device, vs_mod, NULL);
     vkDestroyShaderModule(device, fs_mod, NULL);
 
-    // semaphores
-    VkSemaphore *image_avail_sems = malloc(sizeof(*image_avail_sems) * MAX_FRAMES_IN_FLIGHT);
-    VkSemaphore *render_done_sems = malloc(sizeof(*render_done_sems) * MAX_FRAMES_IN_FLIGHT);
-    VkSemaphore *swapchain_sems = malloc(sizeof(*swapchain_sems) * MAX_FRAMES_IN_FLIGHT);
+    // synchronization primitives
+    VkSemaphore *image_avail_sems = malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
+    VkSemaphore *render_done_sems = malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
+    VkFence *render_done_fences = malloc(sizeof(VkFence) * MAX_FRAMES_IN_FLIGHT);
+    VkFence *swapchain_fences = malloc(sizeof(VkFence) * win.image_ct);
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         create_sem(device, &image_avail_sems[i]);
         create_sem(device, &render_done_sems[i]);
+        create_fence(device, VK_FENCE_CREATE_SIGNALED_BIT, &render_done_fences[i]);
+    }
+
+    for (int i = 0; i < win.image_ct; i++) {
+        swapchain_fences[i] = NULL;
     }
 
     // timing
@@ -149,22 +155,36 @@ int main() {
         VkResult res;
         glfwPollEvents();
 
-        // choose semaphores
+        // choose sync primitives
         int sync_set_idx = f_count % MAX_FRAMES_IN_FLIGHT;
         VkSemaphore image_avail_sem = image_avail_sems[sync_set_idx];
         VkSemaphore render_done_sem = render_done_sems[sync_set_idx];
-        VkSemaphore swapchain_fence = swapchain_sems[sync_set_idx];
+        VkFence render_done_fence = render_done_fences[sync_set_idx];
 
-        // wait for a) previous frame using this sync set to complete
-        //      and b) frame using this swapchain image to complete
-        VkSemaphore wait_fences[2] = {render_done_sem, swapchain_sem};
+        // wait for previous frame using this sync set to complete
         res = VK_ERROR_UNKNOWN;
-        vkWaitForFences(device, 2, wait_fences, VK_TRUE, UINT64_MAX);
+        res = vkWaitForFences(device, 1, &render_done_fence, VK_TRUE, UINT64_MAX);
+        assert(res == VK_SUCCESS);
+
+        res = VK_ERROR_UNKNOWN;
+        res = vkResetFences(device, 1, &render_done_fence);
+        assert(res == VK_SUCCESS);
 
         // acquire image
         uint32_t image_idx;
         VkFramebuffer fb;
         window_acquire(&win, image_avail_sem, &image_idx, &fb);
+
+        // wait for swapchain fence
+        VkFence swapchain_fence = swapchain_fences[image_idx];
+        if (swapchain_fence != NULL) {
+            res = VK_ERROR_UNKNOWN;
+            res = vkWaitForFences(device, 1, &swapchain_fence, VK_TRUE, UINT64_MAX);
+            assert(res == VK_SUCCESS);
+        }
+
+        // set swapchain fence
+        swapchain_fences[image_idx] = render_done_fence;
 
         // create command buffer
         VkCommandBuffer cbuf;
@@ -196,7 +216,7 @@ int main() {
         submit_info.pSignalSemaphores = signal_sems;
 
         res = VK_ERROR_UNKNOWN;
-        res = vkQueueSubmit(queue, 1, &submit_info, NULL);
+        res = vkQueueSubmit(queue, 1, &submit_info, render_done_fence);
         assert(res == VK_SUCCESS);
 
         // present
@@ -239,8 +259,12 @@ int main() {
 
     vkDestroyPipeline(device, pipel, NULL);
     vkDestroyPipelineLayout(device, layout, NULL);
-    vkDestroySemaphore(device, image_avail_sem, NULL);
-    vkDestroySemaphore(device, render_done_sem, NULL);
+
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroySemaphore(device, image_avail_sems[i], NULL);
+        vkDestroySemaphore(device, render_done_sems[i], NULL);
+        vkDestroyFence(device, render_done_fences[i], NULL);
+    }
 
     vkDestroyCommandPool(device, cpool, NULL);
     vkDestroyRenderPass(device, rpass, NULL);
