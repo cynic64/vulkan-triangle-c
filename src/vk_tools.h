@@ -48,7 +48,6 @@ void get_physical_device(VkInstance instance, VkPhysicalDevice *phys_dev);
 uint32_t get_queue_fam(VkPhysicalDevice phys_dev);
 
 void create_device(
-    VkInstance *instance,
     VkPhysicalDevice phys_dev,
     uint32_t queue_fam,
     VkDevice *device

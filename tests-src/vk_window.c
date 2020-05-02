@@ -11,53 +11,25 @@
 #include "../src/vk_sync.h"
 #include "../src/vk_cbuf.h"
 
-static void setup(
-    GLFWwindow **window,
-    VkInstance *instance,
-    VkPhysicalDevice *phys_dev,
-    uint32_t *queue_fam,
-    VkDevice *device,
-    VkQueue *queue
-) {
-    *window = init_glfw();
-    create_instance(instance, default_debug_callback, NULL);
-    get_physical_device(*instance, phys_dev);
-    *queue_fam = get_queue_fam(*phys_dev);
-    create_device(instance, *phys_dev, *queue_fam, device);
-    get_queue(*device, *queue_fam, queue);
-}
-
-START_TEST (ut_setup) {
-    // this is not as thoroughly checked as it could be because there are
-    // already more comprehensive tests for these functions in vk_init.c
-    GLFWwindow *window;
-    VkInstance instance;
-    VkPhysicalDevice phys_dev;
-    uint32_t queue_fam;
-    VkDevice device;
-    VkQueue queue;
-
-    setup(&window, &instance, &phys_dev, &queue_fam, &device, &queue);
-
-    // try to wait on the queue becoming idle to test that it works
-    VkResult res = vkQueueWaitIdle(queue);
-    ck_assert(res == VK_SUCCESS);
-} END_TEST
+#include "helpers.h"
 
 START_TEST (ut_create_surface) {
-    GLFWwindow *window;
-    VkInstance instance;
-    VkPhysicalDevice phys_dev;
-    uint32_t queue_fam;
-    VkDevice device;
-    VkQueue queue;
-    setup(&window, &instance, &phys_dev, &queue_fam, &device, &queue);
-    int dbg_msg_ct = 0;
-    VkDebugUtilsMessengerEXT dbg_msgr;
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
+    // create surface
+    VK_OBJECTS;
 
-    VkSurfaceKHR surface;
-    create_surface(instance, window, &surface);
+    helper_create_surface(
+        &gwin,
+        &dbg_msg_ct,
+        NULL,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device,
+        &queue,
+        &surface
+    );
+
+    ck_assert(surface != NULL);
 
     // make sure the surface is usable
     VkSurfaceCapabilitiesKHR surface_caps = {0};
@@ -68,18 +40,19 @@ START_TEST (ut_create_surface) {
 } END_TEST
 
 START_TEST (ut_support) {
-    GLFWwindow *window;
-    VkInstance instance;
-    VkPhysicalDevice phys_dev;
-    uint32_t queue_fam;
-    VkDevice device;
-    VkQueue queue;
-    setup(&window, &instance, &phys_dev, &queue_fam, &device, &queue);
-    int dbg_msg_ct = 0;
-    VkDebugUtilsMessengerEXT dbg_msgr;
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
-    VkSurfaceKHR surface;
-    create_surface(instance, window, &surface);
+    // create surface
+    VK_OBJECTS;
+    helper_create_surface(
+        &gwin,
+        &dbg_msg_ct,
+        NULL,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device,
+        &queue,
+        &surface
+    );
 
     // make sure the physical device and queue family support presentation
     VkBool32 support = VK_FALSE;
@@ -90,20 +63,20 @@ START_TEST (ut_support) {
 } END_TEST
 
 START_TEST (ut_create_swapchain) {
-    GLFWwindow *window;
-    VkInstance instance;
-    VkPhysicalDevice phys_dev;
-    uint32_t queue_fam;
-    VkDevice device;
-    VkQueue queue;
-    setup(&window, &instance, &phys_dev, &queue_fam, &device, &queue);
-    int dbg_msg_ct = 0;
-    VkDebugUtilsMessengerEXT dbg_msgr;
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
-    VkSurfaceKHR surface;
-    create_surface(instance, window, &surface);
+    // create swapchain
+    VK_OBJECTS;
+    helper_create_surface(
+        &gwin,
+        &dbg_msg_ct,
+        NULL,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device,
+        &queue,
+        &surface
+    );
 
-    uint32_t swidth, sheight;
     get_dims(phys_dev, surface, &swidth, &sheight);
 
     VkSwapchainKHR swapchain;
@@ -130,31 +103,30 @@ START_TEST (ut_create_swapchain) {
 } END_TEST
 
 START_TEST (ut_create_image_views) {
-    GLFWwindow *window;
-    VkInstance instance;
-    VkPhysicalDevice phys_dev;
-    uint32_t queue_fam;
-    VkDevice device;
-    VkQueue queue;
-    setup(&window, &instance, &phys_dev, &queue_fam, &device, &queue);
-    VkSurfaceKHR surface;
-    create_surface(instance, window, &surface);
-    uint32_t swidth, sheight;
-    get_dims(phys_dev, surface, &swidth, &sheight);
-    VkSwapchainKHR swapchain;
-    create_swapchain(phys_dev, device, queue_fam, surface, &swapchain, swidth, sheight);
-
-    int dbg_msg_ct = 0;
-    VkDebugUtilsMessengerEXT dbg_msgr;
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
+    // create image views
+    VK_OBJECTS;
+    helper_window_create(
+        &gwin,
+        &dbg_msg_ct,
+        NULL,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device,
+        &queue,
+        &surface,
+        &swidth,
+        &sheight,
+        &win
+    );
 
     uint32_t sw_image_view_ct = 0;
-    create_swapchain_image_views(device, swapchain, &sw_image_view_ct, NULL);
+    create_swapchain_image_views(device, win.swapchain, &sw_image_view_ct, NULL);
     ck_assert(sw_image_view_ct > 0);
     VkImageView *sw_image_views = malloc(sizeof(VkImageView) * sw_image_view_ct);
     create_swapchain_image_views(
         device,
-        swapchain,
+        win.swapchain,
         &sw_image_view_ct,
         sw_image_views
     );
@@ -169,43 +141,30 @@ START_TEST (ut_create_image_views) {
 } END_TEST
 
 START_TEST (ut_create_framebuffer) {
-    GLFWwindow *window;
-    VkInstance instance;
-    VkPhysicalDevice phys_dev;
-    uint32_t queue_fam;
-    VkDevice device;
-    VkQueue queue;
-    setup(&window, &instance, &phys_dev, &queue_fam, &device, &queue);
-    int dbg_msg_ct = 0;
-    VkDebugUtilsMessengerEXT dbg_msgr;
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
-    VkSurfaceKHR surface;
-    create_surface(instance, window, &surface);
-    uint32_t swidth, sheight;
-    get_dims(phys_dev, surface, &swidth, &sheight);
-    VkSwapchainKHR swapchain;
-    create_swapchain(phys_dev, device, queue_fam, surface, &swapchain, swidth, sheight);
-    uint32_t sw_image_view_ct = 0;
-    create_swapchain_image_views(device, swapchain, &sw_image_view_ct, NULL);
-    ck_assert(sw_image_view_ct > 0);
-    VkImageView *sw_image_views = malloc(sizeof(VkImageView) * sw_image_view_ct);
-    create_swapchain_image_views(
-        device,
-        swapchain,
-        &sw_image_view_ct,
-        sw_image_views
+    VK_OBJECTS;
+    helper_window_create(
+        &gwin,
+        &dbg_msg_ct,
+        NULL,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device,
+        &queue,
+        &surface,
+        &swidth,
+        &sheight,
+        &win
     );
-    VkRenderPass rpass;
-    create_rpass(device, SW_FORMAT, &rpass);
 
-    for (int i = 0; i < sw_image_view_ct; i++) {
+    for (int i = 0; i < win.image_ct; i++) {
         VkFramebuffer fb = NULL;
         create_framebuffer(
             device,
             swidth,
             sheight,
-            rpass,
-            sw_image_views[i],
+            win.rpass,
+            win.views[i],
             &fb
         );
 
@@ -254,35 +213,19 @@ START_TEST (ut_get_dims) {
 } END_TEST
 
 START_TEST (ut_window_create) {
-    GLFWwindow *gwin;
-    VkInstance instance;
-    VkPhysicalDevice phys_dev;
-    uint32_t queue_fam;
-    VkDevice device;
-    VkQueue queue;
-    setup(&gwin, &instance, &phys_dev, &queue_fam, &device, &queue);
-    int dbg_msg_ct = 0;
-    VkDebugUtilsMessengerEXT dbg_msgr;
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
-    VkSurfaceKHR surface;
-    create_surface(instance, gwin, &surface);
-    uint32_t swidth, sheight;
-    get_dims(phys_dev, surface, &swidth, &sheight);
-    VkRenderPass rpass;
-    create_rpass(device, SW_FORMAT, &rpass);
-
-    struct Window win = {0};
-    window_create(
-        gwin,
-        phys_dev,
-        instance,
-        device,
-        surface,
-        queue_fam,
-        queue,
-        rpass,
-        swidth,
-        sheight,
+    VK_OBJECTS;
+    helper_window_create(
+        &gwin,
+        &dbg_msg_ct,
+        NULL,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device,
+        &queue,
+        &surface,
+        &swidth,
+        &sheight,
         &win
     );
 
@@ -305,24 +248,21 @@ START_TEST (ut_window_create) {
 } END_TEST
 
 START_TEST (ut_window_recreate) {
-    GLFWwindow *gwin;
-    VkInstance instance;
-    VkPhysicalDevice phys_dev;
-    uint32_t queue_fam;
-    VkDevice device;
-    VkQueue queue;
-    setup(&gwin, &instance, &phys_dev, &queue_fam, &device, &queue);
-    int dbg_msg_ct = 0;
-    VkDebugUtilsMessengerEXT dbg_msgr;
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
-    VkSurfaceKHR surface;
-    create_surface(instance, gwin, &surface);
-    uint32_t swidth, sheight;
-    get_dims(phys_dev, surface, &swidth, &sheight);
-    VkRenderPass rpass;
-    create_rpass(device, SW_FORMAT, &rpass);
-    struct Window win = {0};
-    window_create(gwin, phys_dev, instance, device, surface, queue_fam, queue, rpass, swidth, sheight, &win);
+    VK_OBJECTS;
+    helper_window_create(
+        &gwin,
+        &dbg_msg_ct,
+        NULL,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device,
+        &queue,
+        &surface,
+        &swidth,
+        &sheight,
+        &win
+    );
 
     window_recreate_swapchain(&win, swidth, sheight);
 
@@ -345,30 +285,21 @@ START_TEST (ut_window_recreate) {
 }
 
 START_TEST (ut_window_acquire) {
-    GLFWwindow *gwin;
-    VkInstance instance;
-    VkPhysicalDevice phys_dev;
-    VkDevice device;
-    VkQueue queue;
-    int dbg_msg_ct = 0;
-    gwin = init_glfw();
-    create_instance(&instance, default_debug_callback, &dbg_msg_ct);
-    VkDebugUtilsMessengerEXT dbg_msgr;
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
-    get_physical_device(instance, &phys_dev);
-    uint32_t queue_fam = get_queue_fam(phys_dev);
-    create_device(&instance, phys_dev, queue_fam, &device);
-    get_queue(device, queue_fam, &queue);
-    VkCommandPool cpool = NULL;
-    create_cpool(device, queue_fam, &cpool);
-    VkSurfaceKHR surface;
-    create_surface(instance, gwin, &surface);
-    uint32_t swidth, sheight;
-    get_dims(phys_dev, surface, &swidth, &sheight);
-    VkRenderPass rpass;
-    create_rpass(device, SW_FORMAT, &rpass);
-    struct Window win;
-    window_create(gwin, phys_dev, instance, device, surface, queue_fam, queue, rpass, swidth, sheight, &win);
+    VK_OBJECTS;
+    helper_window_create(
+        &gwin,
+        &dbg_msg_ct,
+        NULL,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device,
+        &queue,
+        &surface,
+        &swidth,
+        &sheight,
+        &win
+    );
 
     // acquire
     VkFramebuffer fb;
@@ -379,38 +310,17 @@ START_TEST (ut_window_acquire) {
     window_acquire(&win, sem, &image_idx, &fb);
 
     // test by trying to use it
-    // layout
-    VkPipelineLayout layout;
-    create_layout(device, &layout);
-    // pipeline
-    FILE *fp;
-    size_t vs_size, fs_size;
-    char *vs_buf, *fs_buf;
-    fp = fopen("assets/testing/test.vert.spv", "rb");
-    ck_assert(fp != NULL);
-    read_bin(fp, &vs_size, NULL);
-    vs_buf = malloc(vs_size);
-    read_bin(fp, &vs_size, vs_buf);
-    fclose(fp);
-    VkShaderModule vs_mod;
-    create_shmod(device, vs_size, vs_buf, &vs_mod);
-    fp = fopen("assets/testing/test.frag.spv", "rb");
-    ck_assert(fp != NULL);
-    read_bin(fp, &fs_size, NULL);
-    fs_buf = malloc(fs_size);
-    read_bin(fp, &fs_size, fs_buf);
-    fclose(fp);
-    VkShaderModule fs_mod;
-    create_shmod(device, fs_size, fs_buf, &fs_mod);
-    VkPipelineShaderStageCreateInfo vs_stage;
-    VkPipelineShaderStageCreateInfo fs_stage;
-    create_shtage(vs_mod, VK_SHADER_STAGE_VERTEX_BIT, &vs_stage);
-    create_shtage(fs_mod, VK_SHADER_STAGE_FRAGMENT_BIT, &fs_stage);
-    VkPipelineShaderStageCreateInfo shtages[] = {vs_stage, fs_stage};
+    // create pipeline
     VkPipeline pipel;
-    create_pipel(device, 2, shtages, layout, rpass, &pipel);
+    helper_create_pipel(device, win.rpass, &pipel);
+
+    // create command buffer
     VkCommandBuffer cbuf;
-    create_cbuf(device, cpool, rpass, fb, swidth, sheight, pipel, &cbuf);
+    VkCommandPool cpool;
+    create_cpool(device, queue_fam, &cpool);
+    create_cbuf(device, cpool, win.rpass, fb, swidth, sheight, pipel, &cbuf);
+
+    // submit
     VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     VkSubmitInfo submit_info = {0};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -429,32 +339,25 @@ START_TEST (ut_window_acquire) {
 } END_TEST
 
 START_TEST (ut_window_cleanup) {
-    GLFWwindow *gwin;
-    VkInstance instance;
-    VkPhysicalDevice phys_dev;
-    VkDevice device;
-    VkQueue queue;
-    int dbg_msg_ct = 0;
-    gwin = init_glfw();
-    create_instance(&instance, default_debug_callback, &dbg_msg_ct);
-    VkDebugUtilsMessengerEXT dbg_msgr;
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
-    get_physical_device(instance, &phys_dev);
-    uint32_t queue_fam = get_queue_fam(phys_dev);
-    create_device(&instance, phys_dev, queue_fam, &device);
-    get_queue(device, queue_fam, &queue);
-    VkSurfaceKHR surface;
-    create_surface(instance, gwin, &surface);
-    uint32_t swidth, sheight;
-    get_dims(phys_dev, surface, &swidth, &sheight);
-    VkRenderPass rpass;
-    create_rpass(device, SW_FORMAT, &rpass);
-    struct Window win;
-    window_create(gwin, phys_dev, instance, device, surface, queue_fam, queue, rpass, swidth, sheight, &win);
+    VK_OBJECTS;
+    helper_window_create(
+        &gwin,
+        &dbg_msg_ct,
+        &dbg_msgr,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device,
+        &queue,
+        &surface,
+        &swidth,
+        &sheight,
+        &win
+    );
 
     window_cleanup(&win);
 
-    vkDestroyRenderPass(device, rpass, NULL);
+    vkDestroyRenderPass(device, win.rpass, NULL);
 
     vkDestroySurfaceKHR(instance, surface, NULL);
     vkDestroyDevice(device, NULL);
@@ -468,10 +371,6 @@ Suite *vk_window_suite(void) {
     Suite *s;
 
     s = suite_create("Swapchain Initialization");
-
-    TCase *tc1 = tcase_create("Setup device, queue, etc. for other tests");
-    tcase_add_test(tc1, ut_setup);
-    suite_add_tcase(s, tc1);
 
     TCase *tc2 = tcase_create("Create surface");
     tcase_add_test(tc2, ut_create_surface);

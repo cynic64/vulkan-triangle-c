@@ -12,7 +12,7 @@ void get_queue(VkDevice device, uint32_t queue_fam, VkQueue *queue) {
     vkGetDeviceQueue(device, queue_fam, 0, queue);
 }
 
-void create_device(VkInstance *instance, VkPhysicalDevice phys_dev, uint32_t queue_fam, VkDevice *device) {
+void create_device(VkPhysicalDevice phys_dev, uint32_t queue_fam, VkDevice *device) {
     // make sure swapchain extension is available
     char *exts[] = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME

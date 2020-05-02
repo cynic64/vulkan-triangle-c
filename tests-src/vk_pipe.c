@@ -9,6 +9,8 @@
 #include "../src/vk_window.h"
 #include "../src/vk_pipe.h"
 
+#include "helpers.h"
+
 START_TEST (ut_read_bin) {
     FILE *fp = fopen("assets/testing/bin_data", "rb");
     ck_assert(fp != NULL);
@@ -26,17 +28,16 @@ START_TEST (ut_read_bin) {
 } END_TEST
 
 START_TEST (ut_create_shmod) {
-    int dbg_msg_ct = 0;
-    init_glfw();
-    VkInstance instance = NULL;
-    create_instance(&instance, default_debug_callback, &dbg_msg_ct);
-    VkPhysicalDevice phys_dev = NULL;
-    get_physical_device(instance, &phys_dev);
-    uint32_t queue_fam = get_queue_fam(phys_dev);
-    VkDevice device = NULL;
-    create_device(&instance, phys_dev, queue_fam, &device);
-    VkDebugUtilsMessengerEXT dbg_msgr;
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
+    VK_OBJECTS;
+    helper_create_device(
+        &gwin,
+        &dbg_msg_ct,
+        NULL,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device
+    );
 
     FILE *fp = fopen("assets/testing/test.vert.spv", "rb");
     ck_assert(fp != NULL);
@@ -54,31 +55,29 @@ START_TEST (ut_create_shmod) {
     ck_assert(shmod != NULL);
 
     vkDestroyShaderModule(device, shmod, NULL);
+
     ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
 START_TEST(ut_create_shtage) {
-    init_glfw();
-    VkInstance instance = NULL;
-    create_instance(&instance, default_debug_callback, NULL);
-    VkPhysicalDevice phys_dev = NULL;
-    get_physical_device(instance, &phys_dev);
-    uint32_t queue_fam = get_queue_fam(phys_dev);
-    VkDevice device = NULL;
-    create_device(&instance, phys_dev, queue_fam, &device);
-    VkDebugUtilsMessengerEXT dbg_msgr;
-    init_debug(&instance, default_debug_callback, NULL, &dbg_msgr);
-    FILE *fp = fopen("assets/testing/test.vert.spv", "rb");
-    ck_assert(fp != NULL);
-    size_t buf_size = 0;
-    read_bin(fp, &buf_size, NULL);
-    char *buf = malloc(buf_size);
-    read_bin(fp, &buf_size, buf);
-    VkShaderModule shmod = NULL;
-    create_shmod(device, buf_size, buf, &shmod);
+    VK_OBJECTS;
+    helper_create_device(
+        &gwin,
+        &dbg_msg_ct,
+        NULL,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device
+    );
 
     VkPipelineShaderStageCreateInfo shtage = {0};
-    create_shtage(shmod, VK_SHADER_STAGE_VERTEX_BIT, &shtage);
+    helper_create_shtage(
+        device,
+        "assets/testing/test.vert.spv",
+        VK_SHADER_STAGE_VERTEX_BIT,
+        &shtage
+    );
 
     ck_assert(shtage.stage == VK_SHADER_STAGE_VERTEX_BIT);
 
@@ -87,17 +86,16 @@ START_TEST(ut_create_shtage) {
 } END_TEST
 
 START_TEST (ut_create_layout) {
-    int dbg_msg_ct = 0;
-    init_glfw();
-    VkInstance instance;
-    create_instance(&instance, default_debug_callback, &dbg_msg_ct);
-    VkPhysicalDevice phys_dev;
-    get_physical_device(instance, &phys_dev);
-    uint32_t queue_fam = get_queue_fam(phys_dev);
-    VkDevice device;
-    create_device(&instance, phys_dev, queue_fam, &device);
-    VkDebugUtilsMessengerEXT dbg_msgr;
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
+    VK_OBJECTS;
+    helper_create_device(
+        &gwin,
+        &dbg_msg_ct,
+        NULL,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device
+    );
 
     VkPipelineLayout layout = NULL;
     create_layout(device, &layout);
@@ -110,17 +108,16 @@ START_TEST (ut_create_layout) {
 } END_TEST
 
 START_TEST (ut_create_rpass) {
-    int dbg_msg_ct = 0;
-    init_glfw();
-    VkInstance instance;
-    create_instance(&instance, default_debug_callback, &dbg_msg_ct);
-    VkPhysicalDevice phys_dev;
-    get_physical_device(instance, &phys_dev);
-    uint32_t queue_fam = get_queue_fam(phys_dev);
-    VkDevice device;
-    create_device(&instance, phys_dev, queue_fam, &device);
-    VkDebugUtilsMessengerEXT dbg_msgr;
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
+    VK_OBJECTS;
+    helper_create_device(
+        &gwin,
+        &dbg_msg_ct,
+        NULL,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device
+    );
 
     VkRenderPass rpass = NULL;
     create_rpass(device, SW_FORMAT, &rpass);
@@ -132,46 +129,32 @@ START_TEST (ut_create_rpass) {
 } END_TEST
 
 START_TEST(ut_create_pipel) {
-    int dbg_msg_ct = 0;
-    init_glfw();
-    VkInstance instance;
-    create_instance(&instance, default_debug_callback, &dbg_msg_ct);
-    VkPhysicalDevice phys_dev;
-    get_physical_device(instance, &phys_dev);
-    uint32_t queue_fam = get_queue_fam(phys_dev);
-    VkDevice device;
-    create_device(&instance, phys_dev, queue_fam, &device);
-    VkDebugUtilsMessengerEXT dbg_msgr;
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
+    VK_OBJECTS;
+    helper_create_device(
+        &gwin,
+        &dbg_msg_ct,
+        NULL,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device
+    );
 
     // load shaders
-    FILE *fp;
-    size_t vs_size, fs_size;
-    char *vs_buf, *fs_buf;
+    VkPipelineShaderStageCreateInfo shtages[2];
 
-    fp = fopen("assets/testing/test.vert.spv", "rb");
-    ck_assert(fp != NULL);
-    read_bin(fp, &vs_size, NULL);
-    vs_buf = malloc(vs_size);
-    read_bin(fp, &vs_size, vs_buf);
-    fclose(fp);
-    VkShaderModule vs_mod;
-    create_shmod(device, vs_size, vs_buf, &vs_mod);
-
-    fp = fopen("assets/testing/test.frag.spv", "rb");
-    ck_assert(fp != NULL);
-    read_bin(fp, &fs_size, NULL);
-    fs_buf = malloc(fs_size);
-    read_bin(fp, &fs_size, fs_buf);
-    fclose(fp);
-    VkShaderModule fs_mod;
-    create_shmod(device, fs_size, fs_buf, &fs_mod);
-
-    VkPipelineShaderStageCreateInfo vs_stage;
-    VkPipelineShaderStageCreateInfo fs_stage;
-    create_shtage(vs_mod, VK_SHADER_STAGE_VERTEX_BIT, &vs_stage);
-    create_shtage(fs_mod, VK_SHADER_STAGE_FRAGMENT_BIT, &fs_stage);
-    VkPipelineShaderStageCreateInfo shtages[] = {vs_stage, fs_stage};
+    helper_create_shtage(
+        device,
+        "assets/testing/test.vert.spv",
+        VK_SHADER_STAGE_VERTEX_BIT,
+        &shtages[0]
+    );
+    helper_create_shtage(
+        device,
+        "assets/testing/test.frag.spv",
+        VK_SHADER_STAGE_FRAGMENT_BIT,
+        &shtages[1]
+    );
 
     // render pass
     VkRenderPass rpass;

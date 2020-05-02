@@ -35,7 +35,7 @@ int main() {
 
     // create device
     VkDevice device;
-    create_device(&instance, phys_dev, queue_fam, &device);
+    create_device(phys_dev, queue_fam, &device);
 
     // get queue
     VkQueue queue;
@@ -217,11 +217,7 @@ int main() {
     printf("%d frames in %.4f secs --> %.4f FPS\n", f_count, elapsed, (double) f_count / elapsed);
     printf("Avg. delta: %.4f ms\n", elapsed / (double) f_count * 1000.0f);
 
-    // cleanup
-    for (int i = 0; i < sw_image_view_ct; i++) {
-        vkDestroyImageView(device, sw_image_views[i], NULL);
-        vkDestroyFramebuffer(device, fbs[i], NULL);
-    }
+    window_cleanup(&win);
 
     vkDestroyPipeline(device, pipel, NULL);
     vkDestroyPipelineLayout(device, layout, NULL);
@@ -231,7 +227,6 @@ int main() {
     vkDestroyCommandPool(device, cpool, NULL);
     vkDestroyRenderPass(device, rpass, NULL);
 
-    vkDestroySwapchainKHR(device, swapchain, NULL);
     vkDestroySurfaceKHR(instance, surface, NULL);
 
     vkDestroyDevice(device, NULL);

@@ -11,21 +11,19 @@
 #include "../src/vk_cbuf.h"
 #include "../src/vk_sync.h"
 
+#include "helpers.h"
+
 START_TEST (ut_create_sem) {
-    GLFWwindow *window;
-    VkInstance instance;
-    VkPhysicalDevice phys_dev;
-    VkDevice device;
-    VkQueue queue;
-    VkDebugUtilsMessengerEXT dbg_msgr;
-    int dbg_msg_ct = 0;
-    window = init_glfw();
-    create_instance(&instance, default_debug_callback, &dbg_msg_ct);
-    init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);
-    get_physical_device(instance, &phys_dev);
-    uint32_t queue_fam = get_queue_fam(phys_dev);
-    create_device(&instance, phys_dev, queue_fam, &device);
-    get_queue(device, queue_fam, &queue);
+    VK_OBJECTS;
+    helper_create_device(
+        &gwin,
+        &dbg_msg_ct,
+        NULL,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device
+    );
 
     VkSemaphore sem = NULL;
     create_sem(device, &sem);
