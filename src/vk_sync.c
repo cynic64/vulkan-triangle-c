@@ -1,6 +1,3 @@
-#ifndef VK_CBUF_H_
-#define VK_CBUF_H_
-
 #include "vk_sync.h"
 
 #include <assert.h>
@@ -21,5 +18,3 @@ void create_fence(VkDevice device, VkFenceCreateFlags flags, VkFence *fence) {
     VkResult res = vkCreateFence(device, &info, NULL, fence);
     assert(res == VK_SUCCESS);
 }
-
-#endif // VK_CBUF_H_
