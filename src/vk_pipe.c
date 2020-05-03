@@ -101,12 +101,19 @@ void create_pipel(
     uint32_t shtage_ct,
     VkPipelineShaderStageCreateInfo *shtages,
     VkPipelineLayout layout,
+    uint32_t binding_ct,
+    VkVertexInputBindingDescription *binding_descs,
+    uint32_t attr_ct,
+    VkVertexInputAttributeDescription *attr_descs,
     VkRenderPass rpass,
     VkPipeline *pipel
 ) {
     VkPipelineVertexInputStateCreateInfo vertex_input = {0};
     vertex_input.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    // we don't bind any vertex inputs, so we can leave them zeroed
+    vertex_input.vertexBindingDescriptionCount = binding_ct;
+    vertex_input.pVertexBindingDescriptions = binding_descs;
+    vertex_input.vertexAttributeDescriptionCount = attr_ct;
+    vertex_input.pVertexAttributeDescriptions = attr_descs;
 
     VkPipelineInputAssemblyStateCreateInfo input_ass = {0};
     input_ass.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

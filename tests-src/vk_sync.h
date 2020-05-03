@@ -1,8 +1,8 @@
-#ifndef T_VK_CBUF_H_
-#define T_VK_CBUF_H_
+#ifndef T_VK_SYNC_H_
+#define T_VK_SYNC_H_
 
 #include <check.h>
 
-Suite *vk_cbuf_suite(void);
+Suite *vk_sync_suite(void);
 
-#endif // T_VK_CBUF_H_
+#endif // T_VK_SYNC_H_

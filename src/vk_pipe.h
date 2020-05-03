@@ -23,6 +23,10 @@ void create_pipel(
     uint32_t shtage_ct,
     VkPipelineShaderStageCreateInfo *shtages,
     VkPipelineLayout layout,
+    uint32_t binding_ct,
+    VkVertexInputBindingDescription *binding_descs,
+    uint32_t attr_ct,
+    VkVertexInputAttributeDescription *attr_descs,
     VkRenderPass rpass,
     VkPipeline *pipel
 );

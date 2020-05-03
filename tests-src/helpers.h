@@ -22,7 +22,9 @@
     VkSurfaceKHR surface = NULL; \
     uint32_t swidth; \
     uint32_t sheight; \
-    struct Window win = {0};
+    struct Window win = {0}; \
+    VkRenderPass rpass = NULL; \
+    VkPipeline pipel = NULL;
 
 // Initializes GLFW, creates an instance, and returns it in *instance.
 //
@@ -121,6 +123,12 @@ void helper_window_create(
 void helper_create_pipel(
     VkDevice device,
     VkRenderPass rpass,
+    uint32_t binding_ct,
+    VkVertexInputBindingDescription *binding_descs,
+    uint32_t attr_ct,
+    VkVertexInputAttributeDescription *attr_descs,
+    char *vs_path,
+    char *fs_path,
     VkPipeline *pipel
 );
 

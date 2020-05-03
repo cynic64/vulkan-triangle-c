@@ -61,8 +61,17 @@ START_TEST (ut_create_cbuf) {
         &win
     );
 
-    VkPipeline pipel;
-    helper_create_pipel(device, win.rpass, &pipel);
+    helper_create_pipel(
+        device,
+        win.rpass,
+        0,
+        NULL,
+        0,
+        NULL,
+        "assets/testing/shaders/empty.vert.spv",
+        "assets/testing/shaders/empty.frag.spv",
+        &pipel
+    );
 
     VkCommandPool cpool;
     create_cpool(device, queue_fam, &cpool);

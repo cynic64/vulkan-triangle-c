@@ -39,7 +39,7 @@ START_TEST (ut_create_shmod) {
         &device
     );
 
-    FILE *fp = fopen("assets/testing/test.vert.spv", "rb");
+    FILE *fp = fopen("assets/testing/shaders/empty.vert.spv", "rb");
     ck_assert(fp != NULL);
     size_t buf_size = 0;
     read_bin(fp, &buf_size, NULL);
@@ -74,7 +74,7 @@ START_TEST(ut_create_shtage) {
     VkPipelineShaderStageCreateInfo shtage = {0};
     helper_create_shtage(
         device,
-        "assets/testing/test.vert.spv",
+        "assets/testing/shaders/empty.vert.spv",
         VK_SHADER_STAGE_VERTEX_BIT,
         &shtage
     );
@@ -119,7 +119,6 @@ START_TEST (ut_create_rpass) {
         &device
     );
 
-    VkRenderPass rpass = NULL;
     create_rpass(device, SW_FORMAT, &rpass);
 
     ck_assert(rpass != NULL);
@@ -145,19 +144,18 @@ START_TEST(ut_create_pipel) {
 
     helper_create_shtage(
         device,
-        "assets/testing/test.vert.spv",
+        "assets/testing/shaders/empty.vert.spv",
         VK_SHADER_STAGE_VERTEX_BIT,
         &shtages[0]
     );
     helper_create_shtage(
         device,
-        "assets/testing/test.frag.spv",
+        "assets/testing/shaders/empty.frag.spv",
         VK_SHADER_STAGE_FRAGMENT_BIT,
         &shtages[1]
     );
 
     // render pass
-    VkRenderPass rpass;
     create_rpass(device, SW_FORMAT, &rpass);
 
     // layout
@@ -165,12 +163,15 @@ START_TEST(ut_create_pipel) {
     create_layout(device, &layout);
 
     // pipeline!
-    VkPipeline pipel = NULL;
     create_pipel(
         device,
         2,
         shtages,
         layout,
+        0,
+        NULL,
+        0,
+        NULL,
         rpass,
         &pipel
     );

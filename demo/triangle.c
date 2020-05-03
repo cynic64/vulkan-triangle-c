@@ -121,6 +121,10 @@ int main() {
         2,
         shtages,
         layout,
+        0,
+        NULL,
+        0,
+        NULL,
         rpass,
         &pipel
     );

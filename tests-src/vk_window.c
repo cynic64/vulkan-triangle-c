@@ -311,8 +311,17 @@ START_TEST (ut_window_acquire) {
 
     // test by trying to use it
     // create pipeline
-    VkPipeline pipel;
-    helper_create_pipel(device, win.rpass, &pipel);
+    helper_create_pipel(
+        device,
+        win.rpass,
+        0,
+        NULL,
+        0,
+        NULL,
+        "assets/testing/shaders/empty.vert.spv",
+        "assets/testing/shaders/empty.frag.spv",
+        &pipel
+    );
 
     // create command buffer
     VkCommandBuffer cbuf;

@@ -178,6 +178,12 @@ void helper_window_create(
 void helper_create_pipel(
     VkDevice device,
     VkRenderPass rpass,
+    uint32_t binding_ct,
+    VkVertexInputBindingDescription *binding_descs,
+    uint32_t attr_ct,
+    VkVertexInputAttributeDescription *attr_descs,
+    char *vs_path,
+    char *fs_path,
     VkPipeline *pipel
 ) {
     // layout
@@ -189,7 +195,7 @@ void helper_create_pipel(
     size_t vs_size, fs_size;
     char *vs_buf, *fs_buf;
 
-    fp = fopen("assets/testing/test.vert.spv", "rb");
+    fp = fopen(vs_path, "rb");
     assert(fp != NULL);
     read_bin(fp, &vs_size, NULL);
     vs_buf = malloc(vs_size);
@@ -198,7 +204,7 @@ void helper_create_pipel(
     VkShaderModule vs_mod;
     create_shmod(device, vs_size, vs_buf, &vs_mod);
 
-    fp = fopen("assets/testing/test.frag.spv", "rb");
+    fp = fopen(fs_path, "rb");
     assert(fp != NULL);
     read_bin(fp, &fs_size, NULL);
     fs_buf = malloc(fs_size);
@@ -215,7 +221,18 @@ void helper_create_pipel(
     VkPipelineShaderStageCreateInfo shtages[] = {vs_stage, fs_stage};
 
     // pipeline!
-    create_pipel(device, 2, shtages, layout, rpass, pipel);
+    create_pipel(
+        device,
+        2,
+        shtages,
+        layout,
+        binding_ct,
+        binding_descs,
+        attr_ct,
+        attr_descs,
+        rpass,
+        pipel
+    );
 }
 
 void helper_create_shtage(
