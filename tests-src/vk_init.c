@@ -104,6 +104,7 @@ START_TEST (ut_get_queue_fam) {
 
     VkQueueFlagBits queue_fam_flags = queue_fam_props[queue_fam].queueFlags;
     ck_assert(VK_QUEUE_GRAPHICS_BIT & queue_fam_flags);
+    ck_assert(VK_QUEUE_TRANSFER_BIT & queue_fam_flags);
 
     ck_assert(dbg_msg_ct == 0);
 } END_TEST

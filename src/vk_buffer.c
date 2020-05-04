@@ -1,6 +1,44 @@
 #include <assert.h>
+#include <string.h>
 
 #include "vk_buffer.h"
+
+void buffer_create(
+    VkDevice device,
+    VkPhysicalDeviceMemoryProperties dev_mem_props,
+    VkDeviceSize size,
+    VkBufferUsageFlags usage,
+    VkMemoryPropertyFlags props,
+    struct Buffer *buf
+) {
+    create_buffer_handle(
+        device,
+        size,
+        usage,
+        &buf->handle
+    );
+
+    create_buffer_memory(
+        device,
+        dev_mem_props,
+        buf->handle,
+        props,
+        &buf->memory
+    );
+}
+
+void buffer_write(
+    VkDevice device,
+    struct Buffer buf,
+    uint32_t size,
+    void *data
+) {
+    void *mapped;
+    VkResult res = vkMapMemory(device, buf.memory, 0, size, 0, &mapped);
+        assert(res == VK_SUCCESS);
+        memcpy(mapped, data, (size_t) size);
+    vkUnmapMemory(device, buf.memory);
+}
 
 void create_buffer_handle(
     VkDevice device,

@@ -170,6 +170,86 @@ START_TEST (ut_copy_memory) {
     ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
+START_TEST (ut_buffer_create) {
+    VK_OBJECTS;
+    helper_create_device(
+        &gwin,
+        &dbg_msg_ct,
+        NULL,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device
+   );
+
+   VkPhysicalDeviceMemoryProperties dev_mem_props;
+   vkGetPhysicalDeviceMemoryProperties(phys_dev, &dev_mem_props);
+
+   uint32_t buf_size = 128;
+
+   struct Buffer buf = {0};
+   buffer_create(
+       device,
+       dev_mem_props,
+       buf_size,
+       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+       &buf
+   );
+
+   // make sure we can map it
+   void *mapped_buf;
+   VkResult res = vkMapMemory(device, buf.memory, 0, buf_size, 0, &mapped_buf);
+   ck_assert(res == VK_SUCCESS);
+
+   vkDestroyBuffer(device, buf.handle, NULL);
+
+   ck_assert(dbg_msg_ct == 0);
+}
+
+START_TEST (ut_buffer_write) {
+    VK_OBJECTS;
+    helper_create_device(
+        &gwin,
+        &dbg_msg_ct,
+        NULL,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device
+   );
+
+   VkPhysicalDeviceMemoryProperties dev_mem_props;
+   vkGetPhysicalDeviceMemoryProperties(phys_dev, &dev_mem_props);
+
+   uint32_t buf_size = 128;
+
+   struct Buffer buf = {0};
+   buffer_create(
+       device,
+       dev_mem_props,
+       buf_size,
+       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+       &buf
+   );
+
+   // write some bytes
+   int source[] = {1, 2, 3};
+   VkDeviceSize size = 3 * sizeof(int);
+
+   buffer_write(device, buf, size, source);
+
+   // read and make sure it matches the source
+   void *mapped_buf;
+   VkResult res = vkMapMemory(device, buf.memory, 0, buf_size, 0, &mapped_buf);
+       ck_assert(res == VK_SUCCESS);
+       ck_assert(memcmp(source, mapped_buf, size) == 0);
+   vkUnmapMemory(device, buf.memory);
+
+   ck_assert(dbg_msg_ct == 0);
+}
+
 Suite *vk_buffer_suite(void) {
     Suite *s;
 
@@ -186,6 +266,14 @@ Suite *vk_buffer_suite(void) {
     TCase *tc3 = tcase_create("Copy memory");
     tcase_add_test(tc3, ut_copy_memory);
     suite_add_tcase(s, tc3);
+
+    TCase *tc4 = tcase_create("Buffer: create");
+    tcase_add_test(tc4, ut_buffer_create);
+    suite_add_tcase(s, tc4);
+
+    TCase *tc5 = tcase_create("Buffer: write");
+    tcase_add_test(tc5, ut_buffer_write);
+    suite_add_tcase(s, tc5);
 
     return s;
 }
