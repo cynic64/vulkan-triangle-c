@@ -79,7 +79,7 @@ int main() {
     VkCommandPool cpool;
     create_cpool(device, queue_fam, &cpool);
 
-    // vertex buffer
+    // vertex and staging buffers
     VkPhysicalDeviceMemoryProperties mem_props;
     vkGetPhysicalDeviceMemoryProperties(phys_dev, &mem_props);
 
@@ -91,17 +91,37 @@ int main() {
     uint32_t vertex_count = sizeof(vertices) / sizeof(vertices[0]);
     VkDeviceSize vertices_size = sizeof(vertices);
 
-    struct Buffer buf;
+    struct Buffer staging_buf;
     buffer_create(
         device,
         mem_props,
         vertices_size,
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        &buf
+        &staging_buf
     );
 
-    buffer_write(device, buf, vertices_size, (void *) vertices);
+    buffer_write(device, staging_buf, vertices_size, (void *) vertices);
+
+    struct Buffer vbuf;
+    buffer_create(
+        device,
+        mem_props,
+        vertices_size,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        &vbuf
+    );
+
+    // copy staging to vertex
+    copy_buffer(
+        device,
+        queue,
+        cpool,
+        vertices_size,
+        staging_buf.handle,
+        vbuf.handle
+    );
 
     // pipeline layout
     VkPipelineLayout layout;
@@ -229,7 +249,7 @@ int main() {
             swidth,
             sheight,
             pipel,
-            buf.handle,
+            vbuf.handle,
             3,
             &cbuf
         );
@@ -301,7 +321,8 @@ int main() {
         vkDestroyFence(device, render_done_fences[i], NULL);
     }
 
-    buffer_destroy(device, buf);
+    buffer_destroy(device, vbuf);
+    buffer_destroy(device, staging_buf);
 
     vkDestroyCommandPool(device, cpool, NULL);
     vkDestroyRenderPass(device, rpass, NULL);
