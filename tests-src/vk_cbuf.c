@@ -77,8 +77,8 @@ START_TEST (ut_create_cbuf) {
     VkCommandPool cpool;
     create_cpool(device, queue_fam, &cpool);
 
-    VkBuffer vbuf;
-    helper_create_vbuf(phys_dev, device, &vbuf);
+    VkBuffer vbuf, ibuf;
+    helper_create_bufs(phys_dev, device, &vbuf, &ibuf);
 
     VkCommandBuffer cbuf = NULL;
     create_cbuf(
@@ -90,6 +90,7 @@ START_TEST (ut_create_cbuf) {
         sheight,
         pipel,
         vbuf,
+        ibuf,
         3,
         &cbuf
     );

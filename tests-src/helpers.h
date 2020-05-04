@@ -139,11 +139,12 @@ void helper_create_shtage(
     VkPipelineShaderStageCreateInfo *shtage
 );
 
-// Creates a vertex buffer for a triangle
-void helper_create_vbuf(
+// Creates a vertex buffer and an index bufer for a triangle
+void helper_create_bufs(
     VkPhysicalDevice phys_dev,
     VkDevice device,
-    VkBuffer *vbuf
+    VkBuffer *vbuf,
+    VkBuffer *ibuf
 );
 
 #endif // T_HELPERS_H_

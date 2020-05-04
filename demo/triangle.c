@@ -79,7 +79,7 @@ int main() {
     VkCommandPool cpool;
     create_cpool(device, queue_fam, &cpool);
 
-    // vertex and staging buffers
+    // buffers
     VkPhysicalDeviceMemoryProperties mem_props;
     vkGetPhysicalDeviceMemoryProperties(phys_dev, &mem_props);
 
@@ -91,16 +91,22 @@ int main() {
     uint32_t vertex_count = sizeof(vertices) / sizeof(vertices[0]);
     VkDeviceSize vertices_size = sizeof(vertices);
 
+    uint32_t indices[] = {0, 1, 2};
+    uint32_t index_count = sizeof(indices) / sizeof(indices[0]);
+    VkDeviceSize indices_size = sizeof(indices);
+
+    // staging
     struct Buffer staging_buf;
     buffer_create(
         device,
         mem_props,
-        vertices_size,
+        vertices_size > indices_size ? vertices_size : indices_size,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         &staging_buf
     );
 
+    // vertex
     buffer_write(device, staging_buf, vertices_size, (void *) vertices);
 
     struct Buffer vbuf;
@@ -121,6 +127,29 @@ int main() {
         vertices_size,
         staging_buf.handle,
         vbuf.handle
+    );
+
+    // index buffer
+    buffer_write(device, staging_buf, indices_size, (void *) indices);
+
+    struct Buffer ibuf;
+    buffer_create(
+        device,
+        mem_props,
+        vertices_size,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        &ibuf
+    );
+
+    // copy staging to index
+    copy_buffer(
+        device,
+        queue,
+        cpool,
+        indices_size,
+        staging_buf.handle,
+        ibuf.handle
     );
 
     // pipeline layout
@@ -250,6 +279,7 @@ int main() {
             sheight,
             pipel,
             vbuf.handle,
+            ibuf.handle,
             3,
             &cbuf
         );
@@ -322,6 +352,7 @@ int main() {
     }
 
     buffer_destroy(device, vbuf);
+    buffer_destroy(device, ibuf);
     buffer_destroy(device, staging_buf);
 
     vkDestroyCommandPool(device, cpool, NULL);

@@ -260,10 +260,11 @@ void helper_create_shtage(
     create_shtage(shmod, stage, shtage);
 }
 
-void helper_create_vbuf(
+void helper_create_bufs(
     VkPhysicalDevice phys_dev,
     VkDevice device,
-    VkBuffer *vbuf
+    VkBuffer *vbuf,
+    VkBuffer *ibuf
 ) {
     VkPhysicalDeviceMemoryProperties mem_props;
     vkGetPhysicalDeviceMemoryProperties(phys_dev, &mem_props);
@@ -276,25 +277,37 @@ void helper_create_vbuf(
     uint32_t vertex_count = sizeof(vertices) / sizeof(vertices[0]);
     VkDeviceSize vertices_size = sizeof(vertices);
 
-    create_buffer_handle(
-        device,
-        vertices_size,
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        vbuf
-    );
+    uint32_t indices[] = {0, 1, 2};
+    uint32_t index_count = sizeof(indices) / sizeof(indices[0]);
+    VkDeviceSize indices_size = sizeof(indices);
 
-    VkDeviceMemory vbuf_mem;
-    create_buffer_memory(
+    // vbuf
+    struct Buffer vbuf_complete;
+    buffer_create(
         device,
         mem_props,
-        *vbuf,
+        vertices_size,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        &vbuf_mem
+        &vbuf_complete
     );
 
-    void *vbuf_mapped;
-    VkResult res = vkMapMemory(device, vbuf_mem, 0, vertices_size, 0, &vbuf_mapped);
-        assert(res == VK_SUCCESS);
-        memcpy(vbuf_mapped, vertices, (size_t) vertices_size);
-    vkUnmapMemory(device, vbuf_mem);
+    buffer_write(device, vbuf_complete, vertices_size, (void *) vertices);
+
+    // ibuf
+    struct Buffer ibuf_complete;
+    buffer_create(
+        device,
+        mem_props,
+        indices_size,
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        &ibuf_complete
+    );
+
+    buffer_write(device, ibuf_complete, indices_size, (void *) indices);
+
+    // set
+    *vbuf = vbuf_complete.handle;
+    *ibuf = ibuf_complete.handle;
 }

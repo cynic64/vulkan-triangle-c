@@ -21,7 +21,8 @@ void create_cbuf(
     uint32_t height,
     VkPipeline pipel,
     VkBuffer vbuf,
-    uint32_t vertex_ct,
+    VkBuffer ibuf,
+    uint32_t index_ct,
     VkCommandBuffer *cbuf
 ) {
     VkResult res;
@@ -92,9 +93,12 @@ void create_cbuf(
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(*cbuf, 0, 1, vertex_buffers, offsets);
 
-    // draw! :)
+    // bind pipeline
     vkCmdBindPipeline(*cbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipel);
-    vkCmdDraw(*cbuf, vertex_ct, 1, 0, 0);
+
+    // draw! :)
+    vkCmdBindIndexBuffer(*cbuf, ibuf, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdDrawIndexed(*cbuf, index_ct, 1, 0, 0, 0);
 
     // finish
     vkCmdEndRenderPass(*cbuf);

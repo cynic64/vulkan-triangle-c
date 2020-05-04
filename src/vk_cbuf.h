@@ -14,7 +14,8 @@ void create_cbuf(
     uint32_t height,
     VkPipeline pipel,
     VkBuffer vbuf,
-    uint32_t vertex_ct,
+    VkBuffer ibuf,
+    uint32_t index_ct,
     VkCommandBuffer *cbuf
 );
 
