@@ -18,6 +18,9 @@
 double get_elapsed(struct timespec *s_time);
 
 int main() {
+    // used for error checking on VK functions throughout
+    VkResult res;
+
     // initialize GLFW
     GLFWwindow *gwin = init_glfw();
 
@@ -88,28 +91,17 @@ int main() {
     uint32_t vertex_count = sizeof(vertices) / sizeof(vertices[0]);
     VkDeviceSize vertices_size = sizeof(vertices);
 
-    VkBuffer vbuf;
-    create_buffer_handle(
-        device,
-        vertices_size,
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        &vbuf
-    );
-
-    VkDeviceMemory vbuf_mem;
-    create_buffer_memory(
+    struct Buffer buf;
+    buffer_create(
         device,
         mem_props,
-        vbuf,
+        vertices_size,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        &vbuf_mem
+        &buf
     );
 
-    void *vbuf_mapped;
-    VkResult res = vkMapMemory(device, vbuf_mem, 0, vertices_size, 0, &vbuf_mapped);
-        assert(res == VK_SUCCESS);
-        memcpy(vbuf_mapped, vertices, (size_t) vertices_size);
-    vkUnmapMemory(device, vbuf_mem);
+    buffer_write(device, buf, vertices_size, (void *) vertices);
 
     // pipeline layout
     VkPipelineLayout layout;
@@ -237,7 +229,7 @@ int main() {
             swidth,
             sheight,
             pipel,
-            vbuf,
+            buf.handle,
             3,
             &cbuf
         );
@@ -309,8 +301,7 @@ int main() {
         vkDestroyFence(device, render_done_fences[i], NULL);
     }
 
-    vkDestroyBuffer(device, vbuf, NULL);
-    vkFreeMemory(device, vbuf_mem, NULL);
+    buffer_destroy(device, buf);
 
     vkDestroyCommandPool(device, cpool, NULL);
     vkDestroyRenderPass(device, rpass, NULL);

@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 
 #include "../src/vk_cbuf.h"
+#include "../src/vk_tools.h"
 #include "../src/vk_buffer.h"
 
 #include "helpers.h"
@@ -250,6 +251,41 @@ START_TEST (ut_buffer_write) {
    ck_assert(dbg_msg_ct == 0);
 }
 
+START_TEST (ut_buffer_destroy) {
+    VK_OBJECTS;
+    helper_create_device(
+        &gwin,
+        &dbg_msg_ct,
+        &dbg_msgr,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device
+    );
+
+    VkPhysicalDeviceMemoryProperties mem_props;
+    vkGetPhysicalDeviceMemoryProperties(phys_dev, &mem_props);
+
+    struct Buffer buf;
+    buffer_create(
+        device,
+        mem_props,
+        1,
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        0,
+        &buf
+    );
+
+    // destroy and make sure no validation layers complain
+    buffer_destroy(device, buf);
+
+    vkDestroyDevice(device, NULL);
+    destroy_dbg_msgr(instance, &dbg_msgr);
+    vkDestroyInstance(instance, NULL);
+
+    ck_assert(dbg_msg_ct == 0);
+}
+
 Suite *vk_buffer_suite(void) {
     Suite *s;
 
@@ -267,13 +303,17 @@ Suite *vk_buffer_suite(void) {
     tcase_add_test(tc3, ut_copy_memory);
     suite_add_tcase(s, tc3);
 
-    TCase *tc4 = tcase_create("Buffer: create");
+    TCase *tc4 = tcase_create("Buffer: Create");
     tcase_add_test(tc4, ut_buffer_create);
     suite_add_tcase(s, tc4);
 
-    TCase *tc5 = tcase_create("Buffer: write");
+    TCase *tc5 = tcase_create("Buffer: Write");
     tcase_add_test(tc5, ut_buffer_write);
     suite_add_tcase(s, tc5);
+
+    TCase *tc6 = tcase_create("Buffer: Destroy");
+    tcase_add_test(tc6, ut_buffer_destroy);
+    suite_add_tcase(s, tc6);
 
     return s;
 }

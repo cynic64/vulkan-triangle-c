@@ -40,6 +40,14 @@ void buffer_write(
     vkUnmapMemory(device, buf.memory);
 }
 
+void buffer_destroy(
+    VkDevice device,
+    struct Buffer buf
+) {
+    vkDestroyBuffer(device, buf.handle, NULL);
+    vkFreeMemory(device, buf.memory, NULL);
+}
+
 void create_buffer_handle(
     VkDevice device,
     VkDeviceSize size,

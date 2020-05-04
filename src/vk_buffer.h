@@ -25,6 +25,11 @@ void buffer_write(
     void *data
 );
 
+void buffer_destroy(
+    VkDevice device,
+    struct Buffer buf
+);
+
 // This merely creates the handle, does not allocate or bind any memory to that
 // handle.
 void create_buffer_handle(
