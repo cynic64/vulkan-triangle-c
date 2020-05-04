@@ -188,11 +188,11 @@ void helper_create_pipel(
     VkVertexInputAttributeDescription *attr_descs,
     char *vs_path,
     char *fs_path,
+    VkPipelineLayout *layout,
     VkPipeline *pipel
 ) {
     // layout
-    VkPipelineLayout layout;
-    create_layout(device, &layout);
+    create_layout(device, 0, NULL, layout);
 
     // shaders
     FILE *fp;
@@ -229,7 +229,7 @@ void helper_create_pipel(
         device,
         2,
         shtages,
-        layout,
+        *layout,
         binding_ct,
         binding_descs,
         attr_ct,

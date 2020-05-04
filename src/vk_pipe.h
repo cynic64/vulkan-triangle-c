@@ -14,7 +14,12 @@ void create_shmod(
     VkShaderModule *shmod
 );
 
-void create_layout(VkDevice device, VkPipelineLayout *layout);
+void create_layout(
+    VkDevice device,
+    uint32_t desc_layout_ct,
+    VkDescriptorSetLayout *desc_layouts,
+    VkPipelineLayout *layout
+);
 
 void create_rpass(VkDevice device, VkFormat format, VkRenderPass *rpass);
 

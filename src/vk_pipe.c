@@ -46,10 +46,16 @@ void create_shtage(
     shtage->pSpecializationInfo = NULL;
 }
 
-void create_layout(VkDevice device, VkPipelineLayout *layout) {
+void create_layout(
+    VkDevice device,
+    uint32_t desc_layout_ct,
+    VkDescriptorSetLayout *desc_layouts,
+    VkPipelineLayout *layout
+) {
     VkPipelineLayoutCreateInfo info = {0};
     info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    // we don't use any uniforms, so leaving the rest of the fields NULL/0 is ok
+    info.setLayoutCount = desc_layout_ct;
+    info.pSetLayouts = desc_layouts;
 
     VkResult res = vkCreatePipelineLayout(device, &info, NULL, layout);
     assert(res == VK_SUCCESS);

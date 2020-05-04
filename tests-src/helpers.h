@@ -23,6 +23,7 @@
     uint32_t sheight; \
     struct Window win = {0}; \
     VkRenderPass rpass = NULL; \
+    VkPipelineLayout pipe_layout = NULL; \
     VkPipeline pipel = NULL;
 
 // Initializes GLFW, creates an instance, and returns it in *instance.
@@ -128,6 +129,7 @@ void helper_create_pipel(
     VkVertexInputAttributeDescription *attr_descs,
     char *vs_path,
     char *fs_path,
+    VkPipelineLayout *layout,
     VkPipeline *pipel
 );
 

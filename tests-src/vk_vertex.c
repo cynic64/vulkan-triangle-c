@@ -34,6 +34,7 @@ START_TEST (ut_vertex2_pos_color) {
         VERTEX_2_POS_COLOR_ATTRIBUTES,
         "assets/testing/shaders/simple.vert.spv",
         "assets/testing/shaders/simple.frag.spv",
+        &pipe_layout,
         &pipel
     );
 

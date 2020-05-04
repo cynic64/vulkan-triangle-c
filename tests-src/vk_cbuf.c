@@ -71,6 +71,7 @@ START_TEST (ut_create_cbuf) {
         NULL,
         "assets/testing/shaders/empty.vert.spv",
         "assets/testing/shaders/empty.frag.spv",
+        &pipe_layout,
         &pipel
     );
 
@@ -88,7 +89,10 @@ START_TEST (ut_create_cbuf) {
         win.fbs[0],
         swidth,
         sheight,
+        NULL,
         pipel,
+        0,
+        NULL,
         vbuf,
         ibuf,
         3,

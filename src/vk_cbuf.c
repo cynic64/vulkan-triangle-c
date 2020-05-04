@@ -19,7 +19,10 @@ void create_cbuf(
     VkFramebuffer fb,
     uint32_t width,
     uint32_t height,
+    VkPipelineLayout layout,
     VkPipeline pipel,
+    uint32_t desc_set_ct,
+    VkDescriptorSet *desc_sets,
     VkBuffer vbuf,
     VkBuffer ibuf,
     uint32_t index_ct,
@@ -95,6 +98,20 @@ void create_cbuf(
 
     // bind pipeline
     vkCmdBindPipeline(*cbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipel);
+
+    // bind descriptor sets, if any
+    if (desc_set_ct > 0) {
+        vkCmdBindDescriptorSets(
+            *cbuf,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            layout,
+            0,
+            desc_set_ct,
+            desc_sets,
+            0,
+            NULL
+        );
+    }
 
     // draw! :)
     vkCmdBindIndexBuffer(*cbuf, ibuf, 0, VK_INDEX_TYPE_UINT32);

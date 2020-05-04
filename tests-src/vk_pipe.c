@@ -97,13 +97,12 @@ START_TEST (ut_create_layout) {
         &device
     );
 
-    VkPipelineLayout layout = NULL;
-    create_layout(device, &layout);
+    create_layout(device, 0, NULL, &pipe_layout);
 
     // again, hard to test
-    ck_assert(layout != NULL);
+    ck_assert(pipe_layout != NULL);
 
-    vkDestroyPipelineLayout(device, layout, NULL);
+    vkDestroyPipelineLayout(device, pipe_layout, NULL);
     ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
@@ -159,15 +158,14 @@ START_TEST(ut_create_pipel) {
     create_rpass(device, SW_FORMAT, &rpass);
 
     // layout
-    VkPipelineLayout layout;
-    create_layout(device, &layout);
+    create_layout(device, 0, NULL, &pipe_layout);
 
     // pipeline!
     create_pipel(
         device,
         2,
         shtages,
-        layout,
+        pipe_layout,
         0,
         NULL,
         0,

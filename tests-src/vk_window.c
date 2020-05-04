@@ -321,6 +321,7 @@ START_TEST (ut_window_acquire) {
         NULL,
         "assets/testing/shaders/empty.vert.spv",
         "assets/testing/shaders/empty.frag.spv",
+        &pipe_layout,
         &pipel
     );
 
@@ -339,7 +340,10 @@ START_TEST (ut_window_acquire) {
         fb,
         swidth,
         sheight,
+        NULL,
         pipel,
+        0,
+        NULL,
         vbuf,
         ibuf,
         3,
