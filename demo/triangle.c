@@ -237,6 +237,8 @@ int main() {
             swidth,
             sheight,
             pipel,
+            vbuf,
+            3,
             &cbuf
         );
 
@@ -306,6 +308,9 @@ int main() {
         vkDestroySemaphore(device, render_done_sems[i], NULL);
         vkDestroyFence(device, render_done_fences[i], NULL);
     }
+
+    vkDestroyBuffer(device, vbuf, NULL);
+    vkFreeMemory(device, vbuf_mem, NULL);
 
     vkDestroyCommandPool(device, cpool, NULL);
     vkDestroyRenderPass(device, rpass, NULL);
