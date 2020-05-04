@@ -8,7 +8,6 @@
 #include <GLFW/glfw3.h>
 
 #include "../src/vk_window.h"
-#include "../src/vk_pipe.h"
 
 #define VK_OBJECTS \
     GLFWwindow *gwin = NULL; \
@@ -133,12 +132,18 @@ void helper_create_pipel(
 );
 
 // Creates a shtage by loading the shader at the given path.
-// Malloc's, so be wary of leaks.
 void helper_create_shtage(
     VkDevice device,
     const char *path,
     VkShaderStageFlagBits stage,
     VkPipelineShaderStageCreateInfo *shtage
+);
+
+// Creates a vertex buffer for a triangle
+void helper_create_vbuf(
+    VkPhysicalDevice phys_dev,
+    VkDevice device,
+    VkBuffer *vbuf
 );
 
 #endif // T_HELPERS_H_

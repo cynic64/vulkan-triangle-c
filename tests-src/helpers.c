@@ -1,12 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 #include "helpers.h"
 
 #include "../src/glfwtools.h"
 #include "../src/vk_tools.h"
 #include "../src/vk_window.h"
+#include "../src/vk_buffer.h"
+#include "../src/vk_pipe.h"
+#include "../src/vk_vertex.h"
 
 void helper_create_instance(
     GLFWwindow **gwin,
@@ -254,4 +258,43 @@ void helper_create_shtage(
     create_shmod(device, buf_size, buf, &shmod);
 
     create_shtage(shmod, stage, shtage);
+}
+
+void helper_create_vbuf(
+    VkPhysicalDevice phys_dev,
+    VkDevice device,
+    VkBuffer *vbuf
+) {
+    VkPhysicalDeviceMemoryProperties mem_props;
+    vkGetPhysicalDeviceMemoryProperties(phys_dev, &mem_props);
+
+    struct Vertex2PosColor vertices[] = {
+        { .pos = {0.0, -1.0, 0.0}, .color = {1.0, 0.0, 0.0} },
+        { .pos = {-1.0, 1.0, 0.0}, .color = {0.0, 1.0, 0.0} },
+        { .pos = {1.0, 1.0, 0.0}, .color = {0.0, 0.0, 1.0} }
+    };
+    uint32_t vertex_count = sizeof(vertices) / sizeof(vertices[0]);
+    VkDeviceSize vertices_size = sizeof(vertices);
+
+    create_buffer_handle(
+        device,
+        vertices_size,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        vbuf
+    );
+
+    VkDeviceMemory vbuf_mem;
+    create_buffer_memory(
+        device,
+        mem_props,
+        *vbuf,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        &vbuf_mem
+    );
+
+    void *vbuf_mapped;
+    VkResult res = vkMapMemory(device, vbuf_mem, 0, vertices_size, 0, &vbuf_mapped);
+        assert(res == VK_SUCCESS);
+        memcpy(vbuf_mapped, vertices, (size_t) vertices_size);
+    vkUnmapMemory(device, vbuf_mem);
 }

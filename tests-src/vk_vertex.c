@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 
 #include "../src/vk_vertex.h"
+#include "../src/vk_pipe.h"
 
 #include "helpers.h"
 

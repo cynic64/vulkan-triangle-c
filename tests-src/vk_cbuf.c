@@ -9,6 +9,7 @@
 #include "../src/vk_window.h"
 #include "../src/vk_pipe.h"
 #include "../src/vk_cbuf.h"
+#include "../src/vk_buffer.h"
 
 #include "helpers.h"
 
@@ -76,6 +77,9 @@ START_TEST (ut_create_cbuf) {
     VkCommandPool cpool;
     create_cpool(device, queue_fam, &cpool);
 
+    VkBuffer vbuf;
+    helper_create_vbuf(phys_dev, device, &vbuf);
+
     VkCommandBuffer cbuf = NULL;
     create_cbuf(
         device,
@@ -85,6 +89,8 @@ START_TEST (ut_create_cbuf) {
         swidth,
         sheight,
         pipel,
+        vbuf,
+        3,
         &cbuf
     );
     ck_assert(cbuf != NULL);

@@ -20,6 +20,8 @@ void create_cbuf(
     uint32_t width,
     uint32_t height,
     VkPipeline pipel,
+    VkBuffer vbuf,
+    uint32_t vertex_ct,
     VkCommandBuffer *cbuf
 ) {
     VkResult res;
@@ -39,8 +41,6 @@ void create_cbuf(
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    // make sure we don't get fooled by res being previously set to VK_SUCCESS
-    res = VK_ERROR_UNKNOWN;
     res = vkBeginCommandBuffer(*cbuf, &begin_info);
     assert(res == VK_SUCCESS);
 
@@ -87,9 +87,14 @@ void create_cbuf(
     vkCmdSetViewport(*cbuf, 0, 1, &viewport);
     vkCmdSetScissor(*cbuf, 0, 1, &scissor);
 
+    // bind vertex buffer
+    VkBuffer vertex_buffers[] = {vbuf};
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(*cbuf, 0, 1, vertex_buffers, offsets);
+
     // draw! :)
     vkCmdBindPipeline(*cbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipel);
-    vkCmdDraw(*cbuf, 3, 1, 0, 0);
+    vkCmdDraw(*cbuf, vertex_ct, 1, 0, 0);
 
     // finish
     vkCmdEndRenderPass(*cbuf);

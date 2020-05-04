@@ -10,8 +10,8 @@
 //
 
 struct Vertex2PosColor {
-    vec4 pos;
-    vec4 color;
+    vec3 pos;
+    vec3 color;
 };
 
 static VkVertexInputBindingDescription VERTEX_2_POS_COLOR_BINDINGS[] = {
@@ -22,7 +22,7 @@ static VkVertexInputBindingDescription VERTEX_2_POS_COLOR_BINDINGS[] = {
     }
 };
 
-uint32_t VERTEX_2_POS_COLOR_BINDING_CT = 1;
+static uint32_t VERTEX_2_POS_COLOR_BINDING_CT = 1;
 
 static VkVertexInputAttributeDescription VERTEX_2_POS_COLOR_ATTRIBUTES[] = {
     {
@@ -39,6 +39,6 @@ static VkVertexInputAttributeDescription VERTEX_2_POS_COLOR_ATTRIBUTES[] = {
     }
 };
 
-uint32_t VERTEX_2_POS_COLOR_ATTRIBUTE_CT = 2;
+static uint32_t VERTEX_2_POS_COLOR_ATTRIBUTE_CT = 2;
 
 #endif // VK_VERTEX_H_

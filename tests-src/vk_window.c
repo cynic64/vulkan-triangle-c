@@ -10,6 +10,7 @@
 #include "../src/vk_pipe.h"
 #include "../src/vk_sync.h"
 #include "../src/vk_cbuf.h"
+#include "../src/vk_buffer.h"
 
 #include "helpers.h"
 
@@ -324,10 +325,25 @@ START_TEST (ut_window_acquire) {
     );
 
     // create command buffer
-    VkCommandBuffer cbuf;
     VkCommandPool cpool;
     create_cpool(device, queue_fam, &cpool);
-    create_cbuf(device, cpool, win.rpass, fb, swidth, sheight, pipel, &cbuf);
+
+    VkBuffer vbuf;
+    helper_create_vbuf(phys_dev, device, &vbuf);
+
+    VkCommandBuffer cbuf;
+    create_cbuf(
+        device,
+        cpool,
+        win.rpass,
+        fb,
+        swidth,
+        sheight,
+        pipel,
+        vbuf,
+        3,
+        &cbuf
+    );
 
     // submit
     VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
