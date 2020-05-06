@@ -34,8 +34,8 @@ static VkVertexInputAttributeDescription VERTEX_2_POS_COLOR_ATTRIBUTES[] = {
     {
         .location = 1,
         .binding = 0,
-        .format = VK_FORMAT_R8G8B8_UNORM,
-        .offset = offsetof(struct Vertex2PosColor, pos)
+        .format = VK_FORMAT_R32G32B32_SFLOAT,
+        .offset = offsetof(struct Vertex2PosColor, color)
     }
 };
 

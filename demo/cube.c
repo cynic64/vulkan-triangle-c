@@ -6,11 +6,13 @@
 #include "../src/vk_sync.h"
 #include "../src/vk_buffer.h"
 #include "../src/vk_vertex.h"
+#include "../src/vk_uniform.h"
 
 #include <stdlib.h>
 #include <assert.h>
 #include <time.h>
 #include <string.h>
+#include <math.h>
 
 #define MAX_FRAMES_IN_FLIGHT 4
 
@@ -84,14 +86,41 @@ int main() {
     vkGetPhysicalDeviceMemoryProperties(phys_dev, &mem_props);
 
     struct Vertex2PosColor vertices[] = {
-        { .pos = {0.0, -1.0, 0.0}, .color = {1.0, 0.0, 0.0} },
-        { .pos = {-1.0, 1.0, 0.0}, .color = {0.0, 1.0, 0.0} },
-        { .pos = {1.0, 1.0, 0.0}, .color = {0.0, 0.0, 1.0} }
+        // top
+        { .pos = {-1.0, 1.0, -1.0}, .color = {1.0, 0.0, 0.0} },
+        { .pos = {1.0, 1.0, -1.0}, .color = {1.0, 0.0, 0.0} },
+        { .pos = {-1.0, 1.0, 1.0}, .color = {1.0, 0.0, 0.0} },
+        { .pos = {1.0, 1.0, 1.0}, .color = {1.0, 0.0, 0.0} },
+        // bottom
+        { .pos = {-1.0, -1.0, -1.0}, .color = {0.0, 1.0, 0.0} },
+        { .pos = {1.0, -1.0, -1.0}, .color = {0.0, 1.0, 0.0} },
+        { .pos = {-1.0, -1.0, 1.0}, .color = {0.0, 1.0, 0.0} },
+        { .pos = {1.0, -1.0, 1.0}, .color = {0.0, 1.0, 0.0} },
+        // left
+        { .pos = {-1.0, -1.0, -1.0}, .color = {0.0, 0.0, 1.0} },
+        { .pos = {-1.0, -1.0, 1.0}, .color = {0.0, 0.0, 1.0} },
+        { .pos = {-1.0, 1.0, -1.0}, .color = {0.0, 0.0, 1.0} },
+        { .pos = {-1.0, 1.0, 1.0}, .color = {0.0, 0.0, 1.0} },
+        // right
+        { .pos = {1.0, -1.0, -1.0}, .color = {0.0, 1.0, 1.0} },
+        { .pos = {1.0, 1.0, -1.0}, .color = {0.0, 1.0, 1.0} },
+        { .pos = {1.0, -1.0, 1.0}, .color = {0.0, 1.0, 1.0} },
+        { .pos = {1.0, 1.0, 1.0}, .color = {0.0, 1.0, 1.0} },
+        // front
+        { .pos = {-1.0, -1.0, -1.0}, .color = {1.0, 0.0, 1.0} },
+        { .pos = {-1.0, 1.0, -1.0}, .color = {1.0, 0.0, 1.0} },
+        { .pos = {1.0, -1.0, -1.0}, .color = {1.0, 0.0, 1.0} },
+        { .pos = {1.0, 1.0, -1.0}, .color = {1.0, 0.0, 1.0} },
+        // back
+        { .pos = {-1.0, -1.0, 1.0}, .color = {1.0, 1.0, 0.0} },
+        { .pos = {1.0, -1.0, 1.0}, .color = {1.0, 1.0, 0.0} },
+        { .pos = {-1.0, 1.0, 1.0}, .color = {1.0, 1.0, 0.0} },
+        { .pos = {1.0, 1.0, 1.0}, .color = {1.0, 1.0, 0.0} },
     };
     uint32_t vertex_count = sizeof(vertices) / sizeof(vertices[0]);
     VkDeviceSize vertices_size = sizeof(vertices);
 
-    uint32_t indices[] = {0, 1, 2};
+    uint32_t indices[] = {0, 3, 1, 2, 3, 0, 4, 5, 7, 7, 6, 4, 8, 9, 11, 11, 10, 8, 12, 13, 15, 15, 14, 12, 16, 17, 19, 19, 18, 16, 20, 21, 23, 23, 22, 20};
     uint32_t index_count = sizeof(indices) / sizeof(indices[0]);
     VkDeviceSize indices_size = sizeof(indices);
 
@@ -152,9 +181,61 @@ int main() {
         ibuf.handle
     );
 
+    // uniform buffer
+    mat4 view;
+    mat4 proj;
+    mat4 uniform_data;
+    glm_lookat(
+        (vec3){5.0f, 2.0f, 5.0f},
+        (vec3){0.0f, 0.0f, 0.0f},
+        (vec3){0.0f, 1.0f, 0.0f},
+        view
+    );
+    glm_perspective(
+        3.14 * 0.5,
+        16.0 / 9.0,
+        -1.0,
+        1.0,
+        proj
+    );
+    glm_mat4_mul(proj, view, uniform_data);
+    uint32_t uniform_size = sizeof(uniform_data);
+
+    struct Buffer ubuf;
+    buffer_create(
+        device,
+        mem_props,
+        uniform_size,
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        &ubuf
+    );
+
+    buffer_write(device, ubuf, uniform_size, (void *) uniform_data);
+
+    VkDescriptorSetLayoutBinding u_desc_binding;
+    create_descriptor_binding(0, VK_SHADER_STAGE_VERTEX_BIT, &u_desc_binding);
+
+    VkDescriptorSetLayout u_desc_layout;
+    create_descriptor_layout(device, 1, &u_desc_binding, &u_desc_layout);
+
+    VkDescriptorPool desc_set_pool;
+    create_descriptor_pool(device, 1, 1, &desc_set_pool);
+
+    VkDescriptorSet u_set;
+    allocate_descriptor_set(
+        device,
+        desc_set_pool,
+        u_desc_layout,
+        ubuf.handle,
+        0,
+        uniform_size,
+        &u_set
+    );
+
     // pipeline layout
     VkPipelineLayout layout;
-    create_layout(device, 0, NULL, &layout);
+    create_layout(device, 1, &u_desc_layout, &layout);
 
     // shaders
     FILE *fp;
@@ -162,7 +243,7 @@ int main() {
     char *vs_buf, *fs_buf;
 
     // vs
-    fp = fopen("assets/shaders/triangle/main.vert.spv", "rb");
+    fp = fopen("assets/shaders/cube/main.vert.spv", "rb");
     assert(fp != NULL);
 
     read_bin(fp, &vs_size, NULL);
@@ -175,7 +256,7 @@ int main() {
 
     // fs
     fp = NULL;
-    fp = fopen("assets/shaders/triangle/main.frag.spv", "rb");
+    fp = fopen("assets/shaders/cube/main.frag.spv", "rb");
     assert(fp != NULL);
 
     read_bin(fp, &fs_size, NULL);
@@ -200,10 +281,10 @@ int main() {
         2,
         shtages,
         layout,
-        0,
-        NULL,
-        0,
-        NULL,
+        VERTEX_2_POS_COLOR_BINDING_CT,
+        VERTEX_2_POS_COLOR_BINDINGS,
+        VERTEX_2_POS_COLOR_ATTRIBUTE_CT,
+        VERTEX_2_POS_COLOR_ATTRIBUTES,
         rpass,
         &pipel
     );
@@ -252,6 +333,21 @@ int main() {
         res = vkResetFences(device, 1, &render_done_fence);
         assert(res == VK_SUCCESS);
 
+        // update uniform buffer
+        float time = (float) get_elapsed(&s_time);
+        float x = sin(time) * 10.0;
+        float y = sin(time * 0.5) * 5.0;
+        float z = cos(time) * 10.0;
+        glm_lookat(
+             (vec3){x, y, z},
+             (vec3){0.0f, 0.0f, 0.0f},
+             (vec3){0.0f, 1.0f, 0.0f},
+             view
+        );
+        glm_mat4_mul(proj, view, uniform_data);
+
+        buffer_write(device, ubuf, uniform_size, (void *) uniform_data);
+
         // acquire image
         uint32_t image_idx;
         VkFramebuffer fb;
@@ -279,11 +375,11 @@ int main() {
             sheight,
             layout,
             pipel,
-            0,
-            NULL,
+            1,
+            &u_set,
             vbuf.handle,
             ibuf.handle,
-            3,
+            index_count,
             &cbuf
         );
 
