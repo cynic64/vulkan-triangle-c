@@ -7,6 +7,7 @@
 #include "../src/vk_buffer.h"
 #include "../src/vk_vertex.h"
 #include "../src/vk_uniform.h"
+#include "../src/camera.h"
 
 #include <stdlib.h>
 #include <assert.h>
@@ -197,23 +198,9 @@ int main() {
     );
 
     // uniform buffer
-    mat4 view;
-    mat4 proj;
-    mat4 uniform_data;
-    glm_lookat(
-        (vec3){5.0f, 2.0f, 5.0f},
-        (vec3){0.0f, 0.0f, 0.0f},
-        (vec3){0.0f, 1.0f, 0.0f},
-        view
-    );
-    glm_perspective(
-        3.14 * 0.5,
-        16.0 / 9.0,
-        -1.0,
-        1.0,
-        proj
-    );
-    glm_mat4_mul(proj, view, uniform_data);
+
+    struct OrbitCamera cam = cam_orbit_new(0.0f, 0.0f);
+    mat4 uniform_data = {0};
     uint32_t uniform_size = sizeof(uniform_data);
 
     struct Buffer ubuf;
@@ -332,7 +319,6 @@ int main() {
     // loop
     while (!glfwWindowShouldClose(gwin)) {
         glfwPollEvents();
-        printf("Mouse [x, y]: [%.2f, %.2f]\n", mouse_x, mouse_y);
 
         // choose sync primitives
         int sync_set_idx = f_count % MAX_FRAMES_IN_FLIGHT;
@@ -350,17 +336,7 @@ int main() {
         assert(res == VK_SUCCESS);
 
         // update uniform buffer
-        float time = (float) get_elapsed(&s_time);
-        float x = sin(time) * 10.0;
-        float y = sin(time * 0.5) * 5.0;
-        float z = cos(time) * 10.0;
-        glm_lookat(
-             (vec3){x, y, z},
-             (vec3){0.0f, 0.0f, 0.0f},
-             (vec3){0.0f, 1.0f, 0.0f},
-             view
-        );
-        glm_mat4_mul(proj, view, uniform_data);
+        cam_orbit_mat(&cam, swidth, sheight, mouse_x, mouse_y, uniform_data);
 
         buffer_write(device, ubuf, uniform_size, (void *) uniform_data);
 
