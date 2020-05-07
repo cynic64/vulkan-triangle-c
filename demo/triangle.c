@@ -27,7 +27,6 @@ int main() {
     // create instance
     VkInstance instance;
     // NULL is pUserData
-    int n = 0;
     create_instance(&instance, default_debug_callback, NULL);
 
     // set up debug messenger (again, NULL is pUserData)

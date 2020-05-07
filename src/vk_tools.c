@@ -182,8 +182,8 @@ void create_instance(
     instance_info.enabledLayerCount = val_layer_ct;
 
     // enable debugging during instance creation/destruction
-    VkDebugUtilsMessengerCreateInfoEXT dbg_info;
-    populate_dbg_info(&dbg_info, dbg_cback, pUserData);
+    VkDebugUtilsMessengerCreateInfoEXT dbg_info = {0};
+    populate_dbg_info(&dbg_info, default_debug_callback, pUserData);
     instance_info.pNext = &dbg_info;
 
     // create

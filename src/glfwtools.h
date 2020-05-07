@@ -8,6 +8,8 @@
 
 GLFWwindow *init_glfw();
 
+void glfw_error_callback(int code, const char *string);
+
 void glfw_cleanup(GLFWwindow *window);
 
 #endif // GLFWTOOLS_H_

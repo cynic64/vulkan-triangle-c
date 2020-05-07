@@ -13,11 +13,20 @@
 #include <time.h>
 #include <string.h>
 #include <math.h>
+#include <unistd.h>
 
 #define MAX_FRAMES_IN_FLIGHT 4
 
+double mouse_x = 0;
+double mouse_y = 0;
+
 // returns the elapsed time in floating-point seconds
 double get_elapsed(struct timespec *s_time);
+
+static void glfw_cursor_callback(GLFWwindow *win, double x, double y) {
+    mouse_x = x;
+    mouse_y = y;
+}
 
 int main() {
     // used for error checking on VK functions throughout
@@ -26,10 +35,16 @@ int main() {
     // initialize GLFW
     GLFWwindow *gwin = init_glfw();
 
+    // mouse settings
+    glfwSetCursorPosCallback(gwin, glfw_cursor_callback);
+    if (glfwRawMouseMotionSupported() == GLFW_TRUE) {
+        glfwSetInputMode(gwin, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    }
+    glfwSetInputMode(gwin, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
     // create instance
     VkInstance instance;
     // NULL is pUserData
-    int n = 0;
     create_instance(&instance, default_debug_callback, NULL);
 
     // set up debug messenger (again, NULL is pUserData)
@@ -317,6 +332,7 @@ int main() {
     // loop
     while (!glfwWindowShouldClose(gwin)) {
         glfwPollEvents();
+        printf("Mouse [x, y]: [%.2f, %.2f]\n", mouse_x, mouse_y);
 
         // choose sync primitives
         int sync_set_idx = f_count % MAX_FRAMES_IN_FLIGHT;
