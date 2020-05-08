@@ -197,25 +197,45 @@ int main() {
         ibuf.handle
     );
 
-    // uniform buffer
+    // uniform data
     struct OrbitCamera cam = cam_orbit_new(0.0f, 0.0f);
     mat4 uniform_data = {0};
     uint32_t uniform_size = sizeof(uniform_data);
 
+    // descriptor pool
     VkDescriptorPool desc_set_pool;
-    create_descriptor_pool(device, 1, 1, &desc_set_pool);
+    create_descriptor_pool(device, MAX_FRAMES_IN_FLIGHT, MAX_FRAMES_IN_FLIGHT, &desc_set_pool);
 
-    struct Uniform uniform = uniform_create(
-        device,
-        desc_set_pool,
-        mem_props,
-        VK_SHADER_STAGE_VERTEX_BIT,
-        uniform_size
-    );
+    // synchronization primitives
+    VkSemaphore *image_avail_sems = malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
+    VkSemaphore *render_done_sems = malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
+    VkFence *render_done_fences = malloc(sizeof(VkFence) * MAX_FRAMES_IN_FLIGHT);
+    VkFence *swapchain_fences = malloc(sizeof(VkFence) * win.image_ct);
+
+    // uniforms (also one for each frame in flight)
+    struct Uniform *uniforms = malloc(sizeof(struct Uniform) * MAX_FRAMES_IN_FLIGHT);
+
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        create_sem(device, &image_avail_sems[i]);
+        create_sem(device, &render_done_sems[i]);
+        create_fence(device, VK_FENCE_CREATE_SIGNALED_BIT, &render_done_fences[i]);
+
+        uniforms[i] = uniform_create(
+            device,
+            desc_set_pool,
+            mem_props,
+            VK_SHADER_STAGE_VERTEX_BIT,
+            uniform_size
+        );
+    }
+
+    for (int i = 0; i < win.image_ct; i++) {
+        swapchain_fences[i] = NULL;
+    }
 
     // pipeline layout
     VkPipelineLayout layout;
-    create_layout(device, 1, &uniform.layout, &layout);
+    create_layout(device, 1, &uniforms[0].layout, &layout);
 
     // shaders
     FILE *fp;
@@ -273,22 +293,6 @@ int main() {
     vkDestroyShaderModule(device, vs_mod, NULL);
     vkDestroyShaderModule(device, fs_mod, NULL);
 
-    // synchronization primitives
-    VkSemaphore *image_avail_sems = malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
-    VkSemaphore *render_done_sems = malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
-    VkFence *render_done_fences = malloc(sizeof(VkFence) * MAX_FRAMES_IN_FLIGHT);
-    VkFence *swapchain_fences = malloc(sizeof(VkFence) * win.image_ct);
-
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        create_sem(device, &image_avail_sems[i]);
-        create_sem(device, &render_done_sems[i]);
-        create_fence(device, VK_FENCE_CREATE_SIGNALED_BIT, &render_done_fences[i]);
-    }
-
-    for (int i = 0; i < win.image_ct; i++) {
-        swapchain_fences[i] = NULL;
-    }
-
     // timing
     struct timespec s_time;
     clock_gettime(CLOCK_MONOTONIC, &s_time);
@@ -314,8 +318,8 @@ int main() {
         assert(res == VK_SUCCESS);
 
         // update uniform buffer
+        struct Uniform uniform = uniforms[sync_set_idx];
         cam_orbit_mat(&cam, swidth, sheight, mouse_x, mouse_y, uniform_data);
-
         uniform_write(uniform, uniform_data);
 
         // acquire image
@@ -418,9 +422,10 @@ int main() {
         vkDestroySemaphore(device, image_avail_sems[i], NULL);
         vkDestroySemaphore(device, render_done_sems[i], NULL);
         vkDestroyFence(device, render_done_fences[i], NULL);
+
+        uniform_destroy(uniforms[i]);
     }
 
-    uniform_destroy(uniform);
     vkDestroyDescriptorPool(device, desc_set_pool, NULL);
 
     buffer_destroy(vbuf);
