@@ -25,27 +25,27 @@ void buffer_create(
         props,
         &buf->memory
     );
+
+    buf->device = device;
 }
 
 void buffer_write(
-    VkDevice device,
     struct Buffer buf,
     uint32_t size,
     void *data
 ) {
     void *mapped;
-    VkResult res = vkMapMemory(device, buf.memory, 0, size, 0, &mapped);
+    VkResult res = vkMapMemory(buf.device, buf.memory, 0, size, 0, &mapped);
         assert(res == VK_SUCCESS);
         memcpy(mapped, data, (size_t) size);
-    vkUnmapMemory(device, buf.memory);
+    vkUnmapMemory(buf.device, buf.memory);
 }
 
 void buffer_destroy(
-    VkDevice device,
     struct Buffer buf
 ) {
-    vkDestroyBuffer(device, buf.handle, NULL);
-    vkFreeMemory(device, buf.memory, NULL);
+    vkDestroyBuffer(buf.device, buf.handle, NULL);
+    vkFreeMemory(buf.device, buf.memory, NULL);
 }
 
 void create_buffer_handle(

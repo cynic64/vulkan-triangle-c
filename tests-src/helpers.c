@@ -292,7 +292,7 @@ void helper_create_bufs(
         &vbuf_complete
     );
 
-    buffer_write(device, vbuf_complete, vertices_size, (void *) vertices);
+    buffer_write(vbuf_complete, vertices_size, (void *) vertices);
 
     // ibuf
     struct Buffer ibuf_complete;
@@ -305,7 +305,7 @@ void helper_create_bufs(
         &ibuf_complete
     );
 
-    buffer_write(device, ibuf_complete, indices_size, (void *) indices);
+    buffer_write(ibuf_complete, indices_size, (void *) indices);
 
     // set
     *vbuf = vbuf_complete.handle;

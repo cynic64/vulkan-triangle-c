@@ -3,6 +3,39 @@
 
 #include <vulkan/vulkan.h>
 
+#include "vk_buffer.h"
+
+// Helper for creating uniforms.
+// Creates a descriptor set as well as the underlying buffer.
+// .buffer and .set are the only fields that should be publicly accessed.
+struct Uniform {
+    VkDevice device;
+    struct Buffer buffer;
+    VkDeviceSize size;
+    VkDescriptorSet set;
+    VkDescriptorSetLayout layout;
+};
+
+struct Uniform uniform_create(
+    VkDevice device,
+    VkDescriptorPool dpool,
+    VkPhysicalDeviceMemoryProperties mem_props,
+    VkShaderStageFlags stage,
+    VkDeviceSize size
+);
+
+// Writes to the buffer inside the given Uniform.
+// The size of the write is determined by the size given to the Uniform upon
+// creation.
+void uniform_write(
+    struct Uniform u,
+    void *data
+);
+
+void uniform_destroy(
+    struct Uniform u
+);
+
 void allocate_descriptor_set(
     VkDevice device,
     VkDescriptorPool dpool,

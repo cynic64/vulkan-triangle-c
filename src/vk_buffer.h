@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.h>
 
 struct Buffer {
+    VkDevice device;
     VkBuffer handle;
     VkDeviceMemory memory;
 };
@@ -19,14 +20,12 @@ void buffer_create(
 
 // Note: buffer must be host-visible, and probably should be host-coherent.
 void buffer_write(
-    VkDevice device,
     struct Buffer buf,
     uint32_t size,
     void *data
 );
 
 void buffer_destroy(
-    VkDevice device,
     struct Buffer buf
 );
 

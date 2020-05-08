@@ -21,7 +21,6 @@ struct MouseTracker {
 // mouse moving from one edge of the screen to the other.
 void cam_mouse_diff(
     struct MouseTracker *t,
-    uint32_t swidth, uint32_t sheight,
     double new_x, double new_y,
     double *out_x, double *out_y
 );

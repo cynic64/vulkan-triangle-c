@@ -1,10 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <check.h>
 #include <vulkan/vulkan.h>
 #include <cglm/cglm.h>
 
+#include "../src/vk_tools.h"
 #include "../src/vk_pipe.h"
 #include "../src/vk_uniform.h"
 #include "../src/vk_buffer.h"
@@ -216,6 +218,59 @@ START_TEST (ut_allocate_descriptor_set) {
     ck_assert(dbg_msg_ct == 0);
 }
 
+START_TEST (ut_uniform) {
+    VK_OBJECTS;
+    helper_create_device(
+        &gwin,
+        &dbg_msg_ct,
+        &dbg_msgr,
+        &instance,
+        &phys_dev,
+        &queue_fam,
+        &device
+    );
+
+    VkDescriptorPool dpool;
+    create_descriptor_pool(device, 1, 1, &dpool);
+
+    VkPhysicalDeviceMemoryProperties mem_props;
+    vkGetPhysicalDeviceMemoryProperties(phys_dev, &mem_props);
+
+    int source[] = {0, 1, 2, 3};
+    VkDeviceSize size = sizeof(source);
+
+    // create
+    struct Uniform uniform = uniform_create(
+        device,
+        dpool,
+        mem_props,
+        VK_SHADER_STAGE_VERTEX_BIT,
+        size
+    );
+
+    // write
+    uniform_write(uniform, source);
+
+    // compare
+    void *mapped;
+    VkResult res =
+    vkMapMemory(device, uniform.buffer.memory, 0, size, 0, &mapped);
+        ck_assert(res == VK_SUCCESS);
+        ck_assert(memcmp(mapped, source, size) == 0);
+    vkUnmapMemory(device, uniform.buffer.memory);
+
+    ck_assert(uniform.set != NULL);
+
+    uniform_destroy(uniform);
+
+    vkDestroyDescriptorPool(device, dpool, NULL);
+    vkDestroyDevice(device, NULL);
+    destroy_dbg_msgr(instance, &dbg_msgr);
+    vkDestroyInstance(instance, NULL);
+
+    ck_assert(dbg_msg_ct == 0);
+} END_TEST
+
 Suite *vk_uniform_suite(void) {
     Suite *s;
 
@@ -232,6 +287,10 @@ Suite *vk_uniform_suite(void) {
     TCase *tc3 = tcase_create("Allocate descriptor set");
     tcase_add_test(tc3, ut_allocate_descriptor_set);
     suite_add_tcase(s, tc3);
+
+    TCase *tc4 = tcase_create("Uniform");
+    tcase_add_test(tc4, ut_uniform);
+    suite_add_tcase(s, tc4);
 
     return s;
 }

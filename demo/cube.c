@@ -152,7 +152,7 @@ int main() {
     );
 
     // vertex
-    buffer_write(device, staging_buf, vertices_size, (void *) vertices);
+    buffer_write(staging_buf, vertices_size, (void *) vertices);
 
     struct Buffer vbuf;
     buffer_create(
@@ -175,7 +175,7 @@ int main() {
     );
 
     // index buffer
-    buffer_write(device, staging_buf, indices_size, (void *) indices);
+    buffer_write(staging_buf, indices_size, (void *) indices);
 
     struct Buffer ibuf;
     buffer_create(
@@ -198,46 +198,24 @@ int main() {
     );
 
     // uniform buffer
-
     struct OrbitCamera cam = cam_orbit_new(0.0f, 0.0f);
     mat4 uniform_data = {0};
     uint32_t uniform_size = sizeof(uniform_data);
 
-    struct Buffer ubuf;
-    buffer_create(
-        device,
-        mem_props,
-        uniform_size,
-        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        &ubuf
-    );
-
-    buffer_write(device, ubuf, uniform_size, (void *) uniform_data);
-
-    VkDescriptorSetLayoutBinding u_desc_binding;
-    create_descriptor_binding(0, VK_SHADER_STAGE_VERTEX_BIT, &u_desc_binding);
-
-    VkDescriptorSetLayout u_desc_layout;
-    create_descriptor_layout(device, 1, &u_desc_binding, &u_desc_layout);
-
     VkDescriptorPool desc_set_pool;
     create_descriptor_pool(device, 1, 1, &desc_set_pool);
 
-    VkDescriptorSet u_set;
-    allocate_descriptor_set(
+    struct Uniform uniform = uniform_create(
         device,
         desc_set_pool,
-        u_desc_layout,
-        ubuf.handle,
-        0,
-        uniform_size,
-        &u_set
+        mem_props,
+        VK_SHADER_STAGE_VERTEX_BIT,
+        uniform_size
     );
 
     // pipeline layout
     VkPipelineLayout layout;
-    create_layout(device, 1, &u_desc_layout, &layout);
+    create_layout(device, 1, &uniform.layout, &layout);
 
     // shaders
     FILE *fp;
@@ -338,7 +316,7 @@ int main() {
         // update uniform buffer
         cam_orbit_mat(&cam, swidth, sheight, mouse_x, mouse_y, uniform_data);
 
-        buffer_write(device, ubuf, uniform_size, (void *) uniform_data);
+        uniform_write(uniform, uniform_data);
 
         // acquire image
         uint32_t image_idx;
@@ -368,7 +346,7 @@ int main() {
             layout,
             pipel,
             1,
-            &u_set,
+            &uniform.set,
             vbuf.handle,
             ibuf.handle,
             index_count,
@@ -442,9 +420,12 @@ int main() {
         vkDestroyFence(device, render_done_fences[i], NULL);
     }
 
-    buffer_destroy(device, vbuf);
-    buffer_destroy(device, ibuf);
-    buffer_destroy(device, staging_buf);
+    uniform_destroy(uniform);
+    vkDestroyDescriptorPool(device, desc_set_pool, NULL);
+
+    buffer_destroy(vbuf);
+    buffer_destroy(ibuf);
+    buffer_destroy(staging_buf);
 
     vkDestroyCommandPool(device, cpool, NULL);
     vkDestroyRenderPass(device, rpass, NULL);

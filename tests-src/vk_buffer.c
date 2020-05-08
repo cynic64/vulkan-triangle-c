@@ -239,7 +239,7 @@ START_TEST (ut_buffer_write) {
    int source[] = {1, 2, 3};
    VkDeviceSize size = 3 * sizeof(int);
 
-   buffer_write(device, buf, size, source);
+   buffer_write(buf, size, source);
 
    // read and make sure it matches the source
    void *mapped_buf;
@@ -277,7 +277,7 @@ START_TEST (ut_buffer_destroy) {
     );
 
     // destroy and make sure no validation layers complain
-    buffer_destroy(device, buf);
+    buffer_destroy(buf);
 
     vkDestroyDevice(device, NULL);
     destroy_dbg_msgr(instance, &dbg_msgr);

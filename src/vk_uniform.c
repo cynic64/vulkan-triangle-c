@@ -2,6 +2,58 @@
 
 #include "vk_uniform.h"
 
+struct Uniform uniform_create(
+    VkDevice device,
+    VkDescriptorPool dpool,
+    VkPhysicalDeviceMemoryProperties mem_props,
+    VkShaderStageFlags stage,
+    VkDeviceSize size
+) {
+    struct Uniform u = {0};
+    u.size = size;
+    u.device = device;
+
+    // create buffer
+    buffer_create(
+        device,
+        mem_props,
+        size,
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        &u.buffer
+    );
+
+    // create descriptor set
+    VkDescriptorSetLayoutBinding u_desc_binding;
+    create_descriptor_binding(0, stage, &u_desc_binding);
+
+    create_descriptor_layout(device, 1, &u_desc_binding, &u.layout);
+
+    allocate_descriptor_set(
+        device,
+        dpool,
+        u.layout,
+        u.buffer.handle,
+        0,
+        size,
+        &u.set
+    );
+
+    return u;
+}
+
+void uniform_write(
+    struct Uniform u,
+    void *data
+) {
+    buffer_write(u.buffer, u.size, data);
+}
+
+void uniform_destroy(struct Uniform u) {
+    vkDestroyDescriptorSetLayout(u.device, u.layout, NULL);
+    buffer_destroy(u.buffer);
+}
+
 void allocate_descriptor_set(
     VkDevice device,
     VkDescriptorPool dpool,
