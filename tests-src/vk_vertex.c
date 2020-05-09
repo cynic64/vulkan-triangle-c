@@ -9,7 +9,7 @@
 
 #include "helpers.h"
 
-START_TEST (ut_vertex2_pos_color) {
+START_TEST (ut_vertex3_pos_color) {
     VK_OBJECTS;
     helper_create_device(
         &gwin,
@@ -28,10 +28,10 @@ START_TEST (ut_vertex2_pos_color) {
     helper_create_pipel(
         device,
         rpass,
-        VERTEX_2_POS_COLOR_BINDING_CT,
-        VERTEX_2_POS_COLOR_BINDINGS,
-        VERTEX_2_POS_COLOR_ATTRIBUTE_CT,
-        VERTEX_2_POS_COLOR_ATTRIBUTES,
+        VERTEX_3_POS_COLOR_BINDING_CT,
+        VERTEX_3_POS_COLOR_BINDINGS,
+        VERTEX_3_POS_COLOR_ATTRIBUTE_CT,
+        VERTEX_3_POS_COLOR_ATTRIBUTES,
         "assets/testing/shaders/simple.vert.spv",
         "assets/testing/shaders/simple.frag.spv",
         &pipe_layout,
@@ -46,8 +46,8 @@ Suite *vk_vertex_suite(void) {
 
     s = suite_create("Vertex types");
 
-    TCase *tc1 = tcase_create("Vertex2PosColor");
-    tcase_add_test(tc1, ut_vertex2_pos_color);
+    TCase *tc1 = tcase_create("Vertex3PosColor");
+    tcase_add_test(tc1, ut_vertex3_pos_color);
     suite_add_tcase(s, tc1);
 
     return s;

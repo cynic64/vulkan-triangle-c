@@ -68,17 +68,25 @@ void get_physical_device(VkInstance instance, VkPhysicalDevice *phys_dev) {
     uint32_t phys_dev_ct;
     vkEnumeratePhysicalDevices(instance, &phys_dev_ct, NULL);
 
+    if (phys_dev_ct == 0) {
+        printf("No usable devices!\n");
+        exit(1);
+    }
+
     VkPhysicalDevice *phys_devs = malloc(sizeof(VkPhysicalDevice) * phys_dev_ct);
     vkEnumeratePhysicalDevices(instance, &phys_dev_ct, phys_devs);
+    VkPhysicalDeviceProperties *props =
+        malloc(sizeof(VkPhysicalDeviceProperties) * phys_dev_ct);
 
     for (int i = 0; i < phys_dev_ct; i++) {
-        VkPhysicalDeviceProperties props;
-        vkGetPhysicalDeviceProperties(phys_devs[i], &props);
+        vkGetPhysicalDeviceProperties(phys_devs[i], &props[i]);
     }
 
     // use first device
+    // printf("Using device: %s\n", props[0].deviceName);
     *phys_dev = phys_devs[0];
     free(phys_devs);
+    free(props);
 }
 
 void init_debug(

@@ -54,17 +54,17 @@ START_TEST (ut_check_layers) {
 
     char *bad_layers[] = {
         "VK_LAYER_KHRONOS_validation",
-        "VK_LAYER_VALVE_steam_fossilize_64",
         "potato"
     };
-    res = check_layers(3, bad_layers);
+    uint32_t bad_layer_ct = sizeof(bad_layers) / sizeof(bad_layers[0]);
+    res = check_layers(bad_layer_ct, bad_layers);
     ck_assert(res == -1);
 
     char *good_layers[] = {
         "VK_LAYER_KHRONOS_validation",
-        "VK_LAYER_VALVE_steam_fossilize_64"
     };
-    res = check_layers(2, good_layers);
+    uint32_t good_layer_ct = sizeof(bad_layers) / sizeof(bad_layers[0]);
+    res = check_layers(good_layer_ct, good_layers);
     ck_assert(res == 0);
 }
 

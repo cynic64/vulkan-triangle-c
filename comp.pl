@@ -26,6 +26,8 @@ for (@pkgs) {
     chomp $pflags;
     $flags .= " $pflags";
 }
+# link math.h
+$flags .= " -lm";
 
 my @files;
 push @files, <src/*.c>;
@@ -63,4 +65,4 @@ while (<$f>) {
     last if ($line_count++ > 40);
 }
 
-system $out if $line_count == 0;
+system "$out" if $line_count == 0;

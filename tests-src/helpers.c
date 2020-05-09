@@ -269,7 +269,7 @@ void helper_create_bufs(
     VkPhysicalDeviceMemoryProperties mem_props;
     vkGetPhysicalDeviceMemoryProperties(phys_dev, &mem_props);
 
-    struct Vertex2PosColor vertices[] = {
+    struct Vertex3PosColor vertices[] = {
         { .pos = {0.0, -1.0, 0.0}, .color = {1.0, 0.0, 0.0} },
         { .pos = {-1.0, 1.0, 0.0}, .color = {0.0, 1.0, 0.0} },
         { .pos = {1.0, 1.0, 0.0}, .color = {0.0, 0.0, 1.0} }

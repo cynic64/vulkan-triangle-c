@@ -106,7 +106,7 @@ int main() {
     );
 
     // vertex
-    buffer_write(device, staging_buf, vertices_size, (void *) vertices);
+    buffer_write(staging_buf, vertices_size, (void *) vertices);
 
     struct Buffer vbuf;
     buffer_create(
@@ -129,7 +129,7 @@ int main() {
     );
 
     // index buffer
-    buffer_write(device, staging_buf, indices_size, (void *) indices);
+    buffer_write(staging_buf, indices_size, (void *) indices);
 
     struct Buffer ibuf;
     buffer_create(
@@ -353,9 +353,9 @@ int main() {
         vkDestroyFence(device, render_done_fences[i], NULL);
     }
 
-    buffer_destroy(device, vbuf);
-    buffer_destroy(device, ibuf);
-    buffer_destroy(device, staging_buf);
+    buffer_destroy(vbuf);
+    buffer_destroy(ibuf);
+    buffer_destroy(staging_buf);
 
     vkDestroyCommandPool(device, cpool, NULL);
     vkDestroyRenderPass(device, rpass, NULL);
