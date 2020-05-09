@@ -82,7 +82,7 @@ int main() {
     VkPhysicalDeviceMemoryProperties mem_props;
     vkGetPhysicalDeviceMemoryProperties(phys_dev, &mem_props);
 
-    struct Vertex2PosColor vertices[] = {
+    struct Vertex3PosColor vertices[] = {
         { .pos = {0.0, -1.0, 0.0}, .color = {1.0, 0.0, 0.0} },
         { .pos = {-1.0, 1.0, 0.0}, .color = {0.0, 1.0, 0.0} },
         { .pos = {1.0, 1.0, 0.0}, .color = {0.0, 0.0, 1.0} }
@@ -90,7 +90,7 @@ int main() {
     uint32_t vertex_count = sizeof(vertices) / sizeof(vertices[0]);
     VkDeviceSize vertices_size = sizeof(vertices);
 
-    uint32_t indices[] = {0, 1, 2};
+    uint32_t indices[] = {0, 2, 1};
     uint32_t index_count = sizeof(indices) / sizeof(indices[0]);
     VkDeviceSize indices_size = sizeof(indices);
 
@@ -199,10 +199,10 @@ int main() {
         2,
         shtages,
         layout,
-        0,
-        NULL,
-        0,
-        NULL,
+        VERTEX_3_POS_COLOR_BINDING_CT,
+        VERTEX_3_POS_COLOR_BINDINGS,
+        VERTEX_3_POS_COLOR_ATTRIBUTE_CT,
+        VERTEX_3_POS_COLOR_ATTRIBUTES,
         rpass,
         &pipel
     );
