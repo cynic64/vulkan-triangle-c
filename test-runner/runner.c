@@ -7,14 +7,15 @@
 #include "../tests-src/vk_buffer.h"
 #include "../tests-src/vk_uniform.h"
 
+#include "../tests-src/obj.h"
 #include "../tests-src/camera.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 
 int main() {
-    Suite *s1, *s2, *s3, *s4, *s5, *s6, *s7, *s8, *s9;
-    SRunner *sr1, *sr2, *sr3, *sr4, *sr5, *sr6, *sr7, *sr8, *sr9;
+    Suite *s1, *s2, *s3, *s4, *s5, *s6, *s7, *s8, *s9, *s10;
+    SRunner *sr1, *sr2, *sr3, *sr4, *sr5, *sr6, *sr7, *sr8, *sr9, *sr10;
 
     s1 = vk_init_suite();
     sr1 = srunner_create(s1);
@@ -43,6 +44,9 @@ int main() {
     s9 = vk_camera_suite();
     sr9 = srunner_create(s9);
 
+    s10 = vk_obj_suite();
+    sr10 = srunner_create(s10);
+
     printf("--------------------------------------------------------------------------------\n");
     srunner_run_all(sr1, CK_NORMAL);
     printf("--------------------------------------------------------------------------------\n");
@@ -62,6 +66,8 @@ int main() {
     printf("--------------------------------------------------------------------------------\n");
     srunner_run_all(sr9, CK_NORMAL);
     printf("--------------------------------------------------------------------------------\n");
+    srunner_run_all(sr10, CK_NORMAL);
+    printf("--------------------------------------------------------------------------------\n");
 
     srunner_free(sr1);
     srunner_free(sr2);
@@ -72,4 +78,5 @@ int main() {
     srunner_free(sr7);
     srunner_free(sr8);
     srunner_free(sr9);
+    srunner_free(sr10);
 }
