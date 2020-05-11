@@ -76,6 +76,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL default_debug_callback(
     void* pUserData
 );
 
-void heap_2D(char ***ppp, int major, int minor);
+/* Allocates a 2D char array on the heap, [major][minor] */
+void heap_2D(char ***ppp, size_t major, size_t minor);
 
 #endif // VK_TOOLS_H_

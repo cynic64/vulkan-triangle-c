@@ -343,13 +343,12 @@ void get_extensions(uint32_t *extension_ct, char **extensions) {
     *extension_ct = glfw_ext_ct + our_ext_ct;
 }
 
-void heap_2D(char ***ppp, int major, int minor) {
-    // Allocates [major][minor] char array onto the heap
+void heap_2D(char ***ppp, size_t major, size_t minor) {
     *ppp = malloc(sizeof(char *) * major);
     assert(*ppp != NULL);
 
-    for (int i = 0; i < major; i++) {
-        char *p = malloc(minor);
+    for (size_t i = 0; i < major; i++) {
+        char *p = malloc(sizeof(char) * minor);
         assert(p != NULL);
 
         (*ppp)[i] = p;

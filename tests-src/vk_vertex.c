@@ -55,6 +55,20 @@ START_TEST (ut_vertex_types) {
         &pipel
     );
 
+    // Vertex3PosNormal
+    helper_create_pipel(
+        device,
+        rpass,
+        VERTEX_3_POS_NORMAL_BINDING_CT,
+        VERTEX_3_POS_NORMAL_BINDINGS,
+        VERTEX_3_POS_NORMAL_ATTRIBUTE_CT,
+        VERTEX_3_POS_NORMAL_ATTRIBUTES,
+        "assets/testing/shaders/simple.vert.spv",
+        "assets/testing/shaders/simple.frag.spv",
+        &pipe_layout,
+        &pipel
+    );
+
     ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
