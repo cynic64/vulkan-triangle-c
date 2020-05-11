@@ -127,7 +127,7 @@ START_TEST (ut_copy_memory) {
 
     VkResult res = vkMapMemory(device, buf_mem_first, 0, buffer_size, 0, &buffer_data);
     ck_assert(res == VK_SUCCESS);
-        memcpy(buffer_data, source_data, (size_t) buffer_size);
+    memcpy(buffer_data, source_data, sizeof(source_data));
     vkUnmapMemory(device, buf_mem_first);
 
     // create a second buffer

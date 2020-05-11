@@ -6,7 +6,7 @@ my $M_RUN = 0;
 my $M_TEST = 1;
 
 my $usage = "Usage: comp.pl <run|test> [file]";
-die $usage if ($#ARGV < 0 || $#ARGV > 1);
+die $usage if ($#ARGV < 0);
 
 my $mode;
 if ($ARGV[0] eq "run") {
@@ -14,9 +14,14 @@ if ($ARGV[0] eq "run") {
     die $usage unless $#ARGV == 1;
 } elsif ($ARGV[0] eq "test") {
     $mode = $M_TEST;
-    die $usage unless $#ARGV == 0;
 } else {
     die $usage;
+}
+
+# Pass any extra args on to the binary we compile, if in testing mode
+my $extra_args = "";
+if ($mode == $M_TEST && $#ARGV > 0) {
+    $extra_args = join(" ", @ARGV[1.. $#ARGV]);
 }
 
 my @pkgs = ("vulkan", "glfw3", "cglm", "check");
@@ -53,7 +58,7 @@ if ($main =~ m|.*/(.*)\.c|) {
 
 my $dump = "out-$ARGV[0].txt";
 
-my $cmd = "gcc -g -o $out $flags $str_files $main > $dump 2>&1";
+my $cmd = "gcc -O3 -g -o $out $flags $str_files $main > $dump 2>&1";
 
 print "$cmd\n";
 system $cmd;
@@ -65,4 +70,4 @@ while (<$f>) {
     last if ($line_count++ > 40);
 }
 
-system "$out" if $line_count == 0;
+system "$out $extra_args" if $line_count == 0;

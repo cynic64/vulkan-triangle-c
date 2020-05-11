@@ -13,70 +13,44 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int main() {
-    Suite *s1, *s2, *s3, *s4, *s5, *s6, *s7, *s8, *s9, *s10;
-    SRunner *sr1, *sr2, *sr3, *sr4, *sr5, *sr6, *sr7, *sr8, *sr9, *sr10;
+int main(int argc, char *argv[]) {
+    int suite_count = 10;
+    Suite **suites = malloc(sizeof(suites[0]) * suite_count);
 
-    s1 = vk_init_suite();
-    sr1 = srunner_create(s1);
+    int suite_idx = 0;
 
-    s2 = vk_window_suite();
-    sr2 = srunner_create(s2);
+    // Create suites
+    suites[suite_idx++] = vk_init_suite();
+    suites[suite_idx++] = vk_window_suite();
+    suites[suite_idx++] = vk_pipe_suite();
+    suites[suite_idx++] = vk_cbuf_suite();
+    suites[suite_idx++] = vk_sync_suite();
+    suites[suite_idx++] = vk_vertex_suite();
+    suites[suite_idx++] = vk_buffer_suite();
+    suites[suite_idx++] = vk_uniform_suite();
+    suites[suite_idx++] = vk_camera_suite();
+    suites[suite_idx++] = vk_obj_suite();
 
-    s3 = vk_pipe_suite();
-    sr3 = srunner_create(s3);
+    // If we got a command-line argument, only run that suite
+    if (argc == 2) {
+        int selected_idx = atoi(argv[1]);
+        SRunner *runner = srunner_create(suites[selected_idx]);
+        srunner_run_all(runner, CK_NORMAL);
+        srunner_free(runner);
 
-    s4 = vk_cbuf_suite();
-    sr4 = srunner_create(s4);
+        return 0;
+    } else if (argc > 2) {
+        printf("Usage: runner [suite]\n");
+        exit(1);
+    }
 
-    s5 = vk_sync_suite();
-    sr5 = srunner_create(s5);
-
-    s6 = vk_vertex_suite();
-    sr6 = srunner_create(s6);
-
-    s7 = vk_buffer_suite();
-    sr7 = srunner_create(s7);
-
-    s8 = vk_uniform_suite();
-    sr8 = srunner_create(s8);
-
-    s9 = vk_camera_suite();
-    sr9 = srunner_create(s9);
-
-    s10 = vk_obj_suite();
-    sr10 = srunner_create(s10);
-
-    printf("--------------------------------------------------------------------------------\n");
-    srunner_run_all(sr1, CK_NORMAL);
-    printf("--------------------------------------------------------------------------------\n");
-    srunner_run_all(sr2, CK_NORMAL);
-    printf("--------------------------------------------------------------------------------\n");
-    srunner_run_all(sr3, CK_NORMAL);
-    printf("--------------------------------------------------------------------------------\n");
-    srunner_run_all(sr4, CK_NORMAL);
-    printf("--------------------------------------------------------------------------------\n");
-    srunner_run_all(sr5, CK_NORMAL);
-    printf("--------------------------------------------------------------------------------\n");
-    srunner_run_all(sr6, CK_NORMAL);
-    printf("--------------------------------------------------------------------------------\n");
-    srunner_run_all(sr7, CK_NORMAL);
-    printf("--------------------------------------------------------------------------------\n");
-    srunner_run_all(sr8, CK_NORMAL);
-    printf("--------------------------------------------------------------------------------\n");
-    srunner_run_all(sr9, CK_NORMAL);
-    printf("--------------------------------------------------------------------------------\n");
-    srunner_run_all(sr10, CK_NORMAL);
-    printf("--------------------------------------------------------------------------------\n");
-
-    srunner_free(sr1);
-    srunner_free(sr2);
-    srunner_free(sr3);
-    srunner_free(sr4);
-    srunner_free(sr5);
-    srunner_free(sr6);
-    srunner_free(sr7);
-    srunner_free(sr8);
-    srunner_free(sr9);
-    srunner_free(sr10);
+    // Otherwise, run all tests
+    for (int i = 0; i < suite_idx; i++) {
+        SRunner *runner = srunner_create(suites[i]);
+        
+        printf("--------------------------------------------------------------------------------\n");
+        srunner_run_all(runner, CK_NORMAL);
+        
+        srunner_free(runner);
+    }
 }
