@@ -25,18 +25,19 @@ void parse_triplet(char *str, float out[3]);
    coordinate (which we discard), then normal.
 
    Aborts or segfaulst on any kind of failure
- */
+*/
 void parse_face(char *str, size_t pos_idxs[3], size_t normal_idxs[3]);
 
 void copy_float3(float dest[3], float src[3]);
 
-void load_obj(
-	      FILE *fp,
-	      size_t *vertex_ct,
-	      size_t *index_ct,
-	      struct Vertex3PosNormal *vertices,
-	      uint32_t *indices
-	      ) {
+void obj_load(
+    FILE *fp,
+    size_t *vertex_ct,
+    size_t *index_ct,
+    struct ObjVertex *vertices,
+    uint32_t *indices
+    )
+{
     assert(fp != NULL);
     rewind(fp);
 

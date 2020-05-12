@@ -16,9 +16,9 @@ int is_match(float a[3], float b[3]) {
         && a[2] == b[2]) return 1;
 
     printf("Do not match [x1 y1 z1] [x2 y2 z2]: [%f %f %f] [%f %f %f]\n",
-        a[0], a[1], a[2], b[0], b[1], b[2]);
- 
-   return 0;
+	   a[0], a[1], a[2], b[0], b[1], b[2]);
+
+    return 0;
 }
 
 START_TEST (ut_load_triangle) {
@@ -32,16 +32,16 @@ START_TEST (ut_load_triangle) {
     size_t index_ct = 0;
 
     // Query how much memory will be needed to store vertices and indices
-    load_obj(fp, &vertex_ct, &index_ct, NULL, NULL);
+    obj_load(fp, &vertex_ct, &index_ct, NULL, NULL);
 
     ck_assert(vertex_ct == 3);
     ck_assert(index_ct == 3);
 
     // Load
-    struct Vertex3PosNormal *vertices = malloc(sizeof(vertices[0]) * vertex_ct);
+    struct ObjVertex *vertices = malloc(sizeof(vertices[0]) * vertex_ct);
     uint32_t *indices = malloc(sizeof(indices[1]) * index_ct);
 
-    load_obj(fp, &vertex_ct, &index_ct, vertices, indices);
+    obj_load(fp, &vertex_ct, &index_ct, vertices, indices);
 
     // Check
     float v1[] = {-1.0f, 0.0f, 1.0f};

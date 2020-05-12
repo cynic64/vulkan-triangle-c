@@ -5,7 +5,13 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-struct Vertex3PosNormal;
+#include "vk_vertex.h"
+
+/* Type OBJ files are read into */
+struct ObjVertex {
+    float pos[3];
+    float normal[3];
+};
 
 /* Reads the OBJ file at fp. Panics on any kind of failure.
 
@@ -15,8 +21,11 @@ struct Vertex3PosNormal;
 
    Otherwise, outputs to both with no safety checks as to whether they are large
    enough. */
-void load_obj(FILE *fp,
+void obj_load(FILE *fp,
               size_t *vertex_ct, size_t *index_ct,
-	      struct Vertex3PosNormal *vertices, uint32_t *indices);
+	      struct ObjVertex *vertices, uint32_t *indices);
+
+/* Converts arrays of ObjVertex into Vertex3PosNormal */
+// void 
 
 #endif // OBJ_H_
