@@ -9,8 +9,8 @@
 
 /* Type OBJ files are read into */
 struct ObjVertex {
-    float pos[3];
-    float normal[3];
+	float pos[3];
+	float normal[3];
 };
 
 /* Reads the OBJ file at fp. Panics on any kind of failure.
@@ -26,6 +26,5 @@ void obj_load(FILE *fp,
 	      struct ObjVertex *vertices, uint32_t *indices);
 
 /* Converts arrays of ObjVertex into Vertex3PosNormal */
-// void 
 
 #endif // OBJ_H_
