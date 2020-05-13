@@ -12,6 +12,9 @@ void clamp(float min, float max, float *val);
 void cam_looker(vec3 eye, vec3 center, mat4 dest)
 {
 	glm_lookat(eye, center, (vec3){0.0f, 1.0f, 0.0f}, dest);
+
+	// Flip vertically (GLM and Vulkan don't match up in this regard)
+	glm_scale(dest, (vec3){1.0, -1.0f, 1.0f});
 }
 
 void cam_projector(uint32_t swidth, uint32_t sheight, mat4 dest)
