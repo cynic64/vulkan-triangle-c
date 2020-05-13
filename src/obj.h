@@ -22,9 +22,17 @@ struct ObjVertex {
    Otherwise, outputs to both with no safety checks as to whether they are large
    enough. */
 void obj_load(FILE *fp,
-              size_t *vertex_ct, size_t *index_ct,
+	      size_t *vertex_ct, size_t *index_ct,
 	      struct ObjVertex *vertices, uint32_t *indices);
 
-/* Converts arrays of ObjVertex into Vertex3PosNormal */
+/* Converts an array of ObjVertex to an array of Vertex3PosNormal.
+   Assumes [out] has been allocated to the correct size. */
+void obj_vertex_to_vertex_3_pos_normal_list(struct Vertex3PosNormal *dest,
+					    struct ObjVertex *src,
+					    size_t ct);
+
+/* Converts an ObjVertex to a Vertex3PosNormal. */
+void obj_vertex_to_vertex_3_pos_normal(struct Vertex3PosNormal *dest,
+				       struct ObjVertex *src);
 
 #endif // OBJ_H_

@@ -30,13 +30,9 @@ void parse_face(char *str, size_t pos_idxs[3], size_t normal_idxs[3]);
 
 void copy_float3(float dest[3], float src[3]);
 
-void obj_load(
-	FILE *fp,
-	size_t *vertex_ct,
-	size_t *index_ct,
-	struct ObjVertex *vertices,
-	uint32_t *indices
-	)
+void obj_load(FILE *fp,
+	      size_t *vertex_ct, size_t *index_ct,
+	      struct ObjVertex *vertices, uint32_t *indices)
 {
 	assert(fp != NULL);
 	rewind(fp);
@@ -158,4 +154,20 @@ void parse_face(char *str, size_t pos_idxs[3], size_t normal_idxs[3])
 
 		if (idx >= 3) break;
 	}
+}
+
+void obj_vertex_to_vertex_3_pos_normal_list(struct Vertex3PosNormal *dest,
+					    struct ObjVertex *src,
+					    size_t ct)
+{
+	for (int i = 0; i < ct; i++) {
+		obj_vertex_to_vertex_3_pos_normal(&dest[i], &src[i]);
+	}
+}
+
+void obj_vertex_to_vertex_3_pos_normal(struct Vertex3PosNormal *dest,
+				       struct ObjVertex *src)
+{
+	memcpy(dest->pos, src->pos, sizeof(src->pos));
+	memcpy(dest->normal, src->normal, sizeof(src->normal));
 }
