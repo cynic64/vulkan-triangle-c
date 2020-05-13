@@ -55,7 +55,7 @@ void cam_orbit_mat(
 	mat4 dest
 	)
 {
-	float distance = 8.0;
+	float distance = 4.0;
 
 	// update pitch and yaw
 	double x_diff, y_diff;
