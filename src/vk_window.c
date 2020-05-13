@@ -4,55 +4,44 @@
 #include <assert.h>
 #include <stdlib.h>
 
-void window_create(
-	GLFWwindow *gwin,
-	VkPhysicalDevice phys_dev,
-	VkInstance instance,
-	VkDevice device,
-	VkSurfaceKHR surface,
-	uint32_t queue_fam,
-	VkQueue queue,
-	VkRenderPass rpass,
-	uint32_t swidth,
-	uint32_t sheight,
-	struct Window *win
-	)
+void window_create(GLFWwindow *gwin,
+		   VkPhysicalDevice phys_dev,
+		   VkInstance instance,
+		   VkDevice device,
+		   VkSurfaceKHR surface,
+		   uint32_t queue_fam,
+		   VkQueue queue,
+		   VkRenderPass rpass,
+		   uint32_t swidth, uint32_t sheight,
+		   struct Window *win)
 {
 	// Created resources are first assigned to local variables, then the
 	// outputs are set later (because I find it more readable)
-	VkSwapchainKHR swapchain;
-	create_swapchain(
-		phys_dev,
-		device,
-		queue_fam,
-		surface,
-		&swapchain,
-		swidth,
-		sheight
-		);
 
+	// Swapchain
+	VkSwapchainKHR swapchain;
+	create_swapchain(phys_dev,
+			 device,
+			 queue_fam,
+			 surface,
+			 &swapchain,
+			 swidth, sheight);
+
+	// Image views
 	uint32_t image_ct;
 	create_swapchain_image_views(device, swapchain, &image_ct, NULL);
 
 	VkImageView *views = malloc(sizeof(VkImageView) * image_ct);
-	create_swapchain_image_views(
-		device,
-		swapchain,
-		&image_ct,
-		views
-		);
+	create_swapchain_image_views(device, swapchain, &image_ct, views);
 
 	// Framebuffers
 	VkFramebuffer *fbs = malloc(sizeof(VkFramebuffer) * image_ct);
 	for (int i = 0; i < image_ct; i++) {
-		create_framebuffer(
-			device,
-			swidth,
-			sheight,
-			rpass,
-			views[i],
-			&fbs[i]
-			);
+		create_framebuffer(device,
+				   swidth, sheight,
+				   rpass,
+				   views[i],
+				   &fbs[i]);
 	}
 
 	// Assign
@@ -71,24 +60,18 @@ void window_create(
 	win->fbs = fbs;
 }
 
-void window_recreate_swapchain(
-	struct Window *win,
-	uint32_t swidth,
-	uint32_t sheight
-	)
+void window_recreate_swapchain(struct Window *win,
+			       uint32_t swidth, uint32_t sheight)
 {
 	vkDeviceWaitIdle(win->device);
 
 	// Recreate swapchain
-	create_swapchain(
-		win->phys_dev,
-		win->device,
-		win->queue_fam,
-		win->surface,
-		&win->swapchain,
-		swidth,
-		sheight
-		);
+	create_swapchain(win->phys_dev,
+			 win->device,
+			 win->queue_fam,
+			 win->surface,
+			 &win->swapchain,
+			 swidth, sheight);
 
 	// Recreate swapchain image views
 	// First destroy old image views
@@ -101,16 +84,17 @@ void window_recreate_swapchain(
 	free(win->views);
 
 	// Get new image count and allocate
-	create_swapchain_image_views(win->device, win->swapchain, &win->image_ct, NULL);
+	create_swapchain_image_views(win->device,
+				     win->swapchain,
+				     &win->image_ct,
+				     NULL);
 	win->views = malloc(sizeof(VkImageView) * win->image_ct);
 
 	// Now actually create the views
-	create_swapchain_image_views(
-		win->device,
-		win->swapchain,
-		&win->image_ct,
-		win->views
-		);
+	create_swapchain_image_views(win->device,
+				     win->swapchain,
+				     &win->image_ct,
+				     win->views);
 
 	// Recreate framebuffers
 	// First destroy the old ones
@@ -126,32 +110,26 @@ void window_recreate_swapchain(
 	win->fbs = malloc(sizeof(VkFramebuffer) * win->image_ct);
 
 	for (int i = 0; i < win->image_ct; i++) {
-		create_framebuffer(
-			win->device,
-			swidth,
-			sheight,
-			win->rpass,
-			win->views[i],
-			&win->fbs[i]
-			);
+		create_framebuffer(win->device,
+				   swidth,
+				   sheight,
+				   win->rpass,
+				   win->views[i],
+				   &win->fbs[i]);
 	}
 }
 
-void window_acquire(
-	struct Window *win,
-	VkSemaphore sem,
-	uint32_t *image_idx,
-	VkFramebuffer *fb
-	)
+void window_acquire(struct Window *win,
+		    VkSemaphore sem,
+		    uint32_t *image_idx,
+		    VkFramebuffer *fb)
 {
-	VkResult res = vkAcquireNextImageKHR(
-		win->device,
-		win->swapchain,
-		UINT64_MAX,
-		sem,
-		NULL,
-		image_idx
-		);
+	VkResult res = vkAcquireNextImageKHR(win->device,
+					     win->swapchain,
+					     UINT64_MAX,
+					     sem,
+					     NULL,
+					     image_idx);
 	assert(res == VK_SUCCESS);
 
 	*fb = win->fbs[*image_idx];
@@ -173,19 +151,17 @@ void create_surface(VkInstance instance, GLFWwindow *window, VkSurfaceKHR *surfa
 	assert(res == VK_SUCCESS);
 }
 
-void create_swapchain(
-	VkPhysicalDevice phys_dev,
-	VkDevice device,
-	uint32_t queue_fam,
-	VkSurfaceKHR surface,
-	VkSwapchainKHR *swapchain,
-	uint32_t width,
-	uint32_t height
-	)
+void create_swapchain(VkPhysicalDevice phys_dev,
+		      VkDevice device,
+		      uint32_t queue_fam,
+		      VkSurfaceKHR surface,
+		      VkSwapchainKHR *swapchain,
+		      uint32_t width,	uint32_t height)
 {
 	// Ensure surface has presentation support
 	VkBool32 support = VK_FALSE;
-	vkGetPhysicalDeviceSurfaceSupportKHR(phys_dev, queue_fam, surface, &support);
+	vkGetPhysicalDeviceSurfaceSupportKHR(phys_dev,
+					     queue_fam,surface, &support);
 	assert(support == VK_TRUE);
 
 	VkSurfaceCapabilitiesKHR caps;
@@ -196,8 +172,8 @@ void create_swapchain(
 	extent.height = height;
 
 	VkSwapchainCreateInfoKHR info = {0};
-	info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-		info.surface = surface;
+	info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	info.surface = surface;
 	info.minImageCount = caps.minImageCount;
 	info.imageFormat = SW_FORMAT;
 	info.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
@@ -217,14 +193,10 @@ void create_swapchain(
 	assert(res == VK_SUCCESS);
 }
 
-/* If image_views is NULL, will only output image view count to image_view_ct.
-   Otherwise, outputs to both image_view_ct and image_views. */
-void create_swapchain_image_views(
-	VkDevice device,
-	VkSwapchainKHR swapchain,
-	uint32_t *image_view_ct,
-	VkImageView *image_views
-	)
+void create_swapchain_image_views(VkDevice device,
+				  VkSwapchainKHR swapchain,
+				  uint32_t *image_view_ct,
+				  VkImageView *image_views)
 {
 	VkResult res;
 
@@ -236,8 +208,7 @@ void create_swapchain_image_views(
 
 	// Get images
 	VkImage *images = malloc(sizeof(VkImage) * *image_view_ct);
-	res =
-		vkGetSwapchainImagesKHR(device, swapchain, image_view_ct, images);
+	res = vkGetSwapchainImagesKHR(device, swapchain, image_view_ct, images);
 	assert(res == VK_SUCCESS);
 
 	for (int i = 0; i < *image_view_ct; i++) {
@@ -261,14 +232,11 @@ void create_swapchain_image_views(
 	}
 }
 
-void create_framebuffer(
-	VkDevice device,
-	uint32_t width,
-	uint32_t height,
-	VkRenderPass rpass,
-	VkImageView image_view,
-	VkFramebuffer *fb
-	)
+void create_framebuffer(VkDevice device,
+			uint32_t width,	uint32_t height,
+			VkRenderPass rpass,
+			VkImageView image_view,
+			VkFramebuffer *fb)
 {
 	VkFramebufferCreateInfo info = {0};
 	info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -283,16 +251,14 @@ void create_framebuffer(
 	assert(res == VK_SUCCESS);
 }
 
-void get_dims(
-	VkPhysicalDevice phys_dev,
-	VkSurfaceKHR surface,
-	uint32_t *width,
-	uint32_t *height
-	)
+void get_dims(VkPhysicalDevice phys_dev,
+	      VkSurfaceKHR surface,
+	      uint32_t *width, uint32_t *height)
 {
 	VkSurfaceCapabilitiesKHR caps;
 	VkResult res =
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev, surface, &caps);
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev,
+							  surface, &caps);
 	assert(res == VK_SUCCESS);
 
 	*width = caps.currentExtent.width;
