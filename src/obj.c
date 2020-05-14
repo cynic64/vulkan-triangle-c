@@ -85,18 +85,13 @@ void obj_load(FILE *fp,
 
 void parse_triplet(char *str, float out[3])
 {
-	char *token;
-	char *rest = strdup(str);
-
-	// Discard the first token (because we don't care about the v/vn/vt/whatever
-	// part)
-	assert(strtok_r(rest, " ", &rest) != NULL);
-
-	size_t idx = 0;
-	while ((token = strtok_r(rest, " ", &rest)) != NULL) {
-		out[idx++] = strtof(token, NULL);
-		if (idx >= 3) break;
-	}
+	/*
+	if (sscanf(str, "v %f %f %f", &out[0], &out[1], &out[2]) == 3)
+		return;
+	if (sscanf(str, "vn %f %f %f", &out[0], &out[1], &out[2]) == 3)
+		return;
+	*/
+	assert(sscanf(str, "%*s %f %f %f", &out[0], &out[1], &out[2]) == 3);
 }
 
 void copy_float3(float dest[3], float src[3])
@@ -108,29 +103,19 @@ void copy_float3(float dest[3], float src[3])
 
 void parse_face(char *str, size_t pos_idxs[3], size_t normal_idxs[3])
 {
-	char *token;
-	char *rest = strdup(str);
-
-	// Discard the first token ("f ")
-	assert(strtok_r(rest, " ", &rest) != NULL);
-
-	size_t idx = 0;
-	while ((token = strtok_r(rest, " ", &rest)) != NULL) {
-		char *subrest = strdup(token);
-
-		// position of vertex
-		char *subtoken = strtok_r(subrest, "/", &subrest);
-		pos_idxs[idx] = atoi(subtoken);
-		// skip texture coord
-		strtok_r(subrest, "/", &subrest);
-		// normal of first vertex
-		subtoken = strtok_r(subrest, "/", &subrest);
-		normal_idxs[idx] = atoi(subtoken);
-
-		idx++;
-
-		if (idx >= 3) break;
-	}
+	// I have *no* idea why zeroing everything is necessary, but scanf isn't
+	// happy otherwise if you feed it something ending in \n
+	pos_idxs[0] = 0;
+	pos_idxs[1] = 0;
+	pos_idxs[2] = 0;
+	normal_idxs[0] = 0;
+	normal_idxs[1] = 0;
+	normal_idxs[2] = 0;
+	
+	assert(sscanf(str, "f %d/%*d/%d %d/%*d/%d %d/%*d/%d",
+		      &pos_idxs[0], &normal_idxs[0],
+		      &pos_idxs[1], &normal_idxs[1],
+		      &pos_idxs[2], &normal_idxs[2]) == 6);
 }
 
 void obj_vertex_to_vertex_3_pos_normal_list(struct Vertex3PosNormal *dest,

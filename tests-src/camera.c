@@ -28,7 +28,7 @@ int is_nonzero(mat4 m)
 	float sum = 0;
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
-			sum += m[i][j];
+			sum += m[i][j] * m[i][j];
 		}
 	}
 
@@ -45,7 +45,7 @@ START_TEST (ut_looker)
 
 	ck_assert(is_nonzero(view));
 
-	// if we multiple the eye with the view, we should end up with something
+	// If we multiple the eye with the view, we should end up with something
 	// right in the center of the screen
 	vec4 point = {eye[0], eye[1], eye[2], 1.0f};
 	vec4 dest;

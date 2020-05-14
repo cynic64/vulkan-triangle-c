@@ -17,6 +17,8 @@
  * Discards the first word and converts the remaining 3 to floats, outputting to
  * out.
  *
+ * Only works on positions (v ...) or normals (vn ...).
+ *
  * Aborts or segfaults on any kind of failure.
  */
 void parse_triplet(char *str, float out[3]);

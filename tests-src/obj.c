@@ -156,12 +156,21 @@ int test_parse_face(size_t pos_idxs[3],
 		pos_idxs[1], normal_idxs[1], pos_idxs[2], normal_idxs[2]);
 	parse_face(string, parsed_pos_idxs, parsed_normal_idxs);
 
-	return pos_idxs[0] == parsed_pos_idxs[0]
+	int is_match = pos_idxs[0] == parsed_pos_idxs[0]
 		&& pos_idxs[1] == parsed_pos_idxs[1]
 		&& pos_idxs[2] == parsed_pos_idxs[2]
 		&& normal_idxs[0] == parsed_normal_idxs[0]
 		&& normal_idxs[1] == parsed_normal_idxs[1]
 		&& normal_idxs[2] == parsed_normal_idxs[2];
+
+	if (!is_match)
+		printf("Do not match: [%d %d %d] [%d %d %d] != [%d %d %d] [%d %d %d]\n",
+		       pos_idxs[0], pos_idxs[1], pos_idxs[2],
+		       normal_idxs[0], normal_idxs[1], normal_idxs[2],
+		       parsed_pos_idxs[0], parsed_pos_idxs[1], parsed_pos_idxs[2],
+		       parsed_normal_idxs[0], parsed_normal_idxs[1], parsed_normal_idxs[2]);
+
+	return is_match;
 }
 
 START_TEST (ut_parse_face)
@@ -171,7 +180,7 @@ START_TEST (ut_parse_face)
 
 	ck_assert(test_parse_face(pos_idxs, normal_idxs,
 				  "f %d/1/%d %d/1/%d %d/1/%d") == 1);
-	ck_assert(test_parse_face(pos_idxs, normal_idxs,
+	ck_assert(test_parse_face(pos_idxs, normal_idxs,	
 				  "f %d/1/%d %d/1/%d %d/1/%d\n") == 1);
 } END_TEST
 
