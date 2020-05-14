@@ -6,10 +6,11 @@
 
 #include "../src/vk_vertex.h"
 #include "../src/obj.h"
+#include "../src/ll_obj.h"
 
 #include "helpers.h"
 
-/* Returns 1 if [a] and [b] match, 0 otherwise. */
+// Returns 1 if [a] and [b] match, 0 otherwise.
 int is_match(float a[3], float b[3])
 {
 	if (a[0] == b[0]
@@ -22,7 +23,7 @@ int is_match(float a[3], float b[3])
 	return 0;
 }
 
-/* Returns 0.0 .. 1.0 */
+// Returns 0.0 .. 1.0
 float frand()
 {
 	return (float)rand() / (float)RAND_MAX;
@@ -30,9 +31,11 @@ float frand()
 
 START_TEST (ut_load_triangle)
 {
-	// triangle.obj has just 3 vertices at:
-	// (-1 0 1), (-1 0 -1), (1 0 -1)
-	// Indices: 1, 2, 0
+	/*
+	 * triangle.obj has just 3 vertices at:
+	 * (-1 0 1), (-1 0 -1), (1 0 -1)
+	 * Indices: 1, 2, 0
+	 */
 	FILE *fp = fopen("assets/models/triangle.obj", "r");
 	ck_assert(fp != NULL);
 
@@ -80,7 +83,7 @@ START_TEST (ut_convert_single)
 
 	ck_assert(is_match(obj.pos, vtx.pos));
 	ck_assert(is_match(obj.normal, vtx.normal));
-}
+} END_TEST
 
 START_TEST (ut_convert_multiple)
 {
@@ -104,7 +107,73 @@ START_TEST (ut_convert_multiple)
 		ck_assert(is_match(objs[i].pos, vtxs[i].pos));
 		ck_assert(is_match(objs[i].normal, vtxs[i].normal));
 	}
+} END_TEST
+
+/*
+ * Helper function to test parse_triplet with different formats.
+ *
+ * Given a format string and a point, returns 1 if parsing the formatted string
+ * matches the original point, 0 otherwise.
+ *
+ * Format string should have 3 %f's in it.
+ */
+int test_parse_triplet(float point[3], const char *format)
+{
+	char string[256];
+	float parsed[3];
+
+	sprintf(string, format, point[0], point[1], point[2]);
+	parse_triplet(string, parsed);
+
+	return is_match(point, parsed);
+} 
+
+START_TEST (ut_parse_triplet)
+{
+	float point[3] = {0.3, -0.4, 0.5};
+
+	char string[256];
+	float parsed[3];
+
+	ck_assert(test_parse_triplet(point, "v %f %f %f") == 1);
+	ck_assert(test_parse_triplet(point, "vn %f %f %f") == 1);
+	ck_assert(test_parse_triplet(point, "v %f %f %f\n") == 1);
+	ck_assert(test_parse_triplet(point, "vn %f %f %f\n") == 1);
+} END_TEST
+
+/*
+ * Helper function to test parse_face with different formats.
+ */
+int test_parse_face(size_t pos_idxs[3],
+		    size_t normal_idxs[3],
+		    const char *format)
+{
+	char string[256];
+	size_t parsed_pos_idxs[3];
+	size_t parsed_normal_idxs[3];
+
+	sprintf(string, format, pos_idxs[0], normal_idxs[0],
+		pos_idxs[1], normal_idxs[1], pos_idxs[2], normal_idxs[2]);
+	parse_face(string, parsed_pos_idxs, parsed_normal_idxs);
+
+	return pos_idxs[0] == parsed_pos_idxs[0]
+		&& pos_idxs[1] == parsed_pos_idxs[1]
+		&& pos_idxs[2] == parsed_pos_idxs[2]
+		&& normal_idxs[0] == parsed_normal_idxs[0]
+		&& normal_idxs[1] == parsed_normal_idxs[1]
+		&& normal_idxs[2] == parsed_normal_idxs[2];
 }
+
+START_TEST (ut_parse_face)
+{
+	size_t pos_idxs[3] = {3, 6, 4};
+	size_t normal_idxs[3] = {10, 2, 1};
+
+	ck_assert(test_parse_face(pos_idxs, normal_idxs,
+				  "f %d/1/%d %d/1/%d %d/1/%d") == 1);
+	ck_assert(test_parse_face(pos_idxs, normal_idxs,
+				  "f %d/1/%d %d/1/%d %d/1/%d\n") == 1);
+} END_TEST
 
 Suite *vk_obj_suite(void)
 {
@@ -123,6 +192,14 @@ Suite *vk_obj_suite(void)
 	TCase *tc3 = tcase_create("Convert vertex array");
 	tcase_add_test(tc3, ut_convert_multiple);
 	suite_add_tcase(s, tc3);
+
+	TCase *tc4 = tcase_create("(Internals) Parse triplet");
+	tcase_add_test(tc4, ut_parse_triplet);
+	suite_add_tcase(s, tc4);
+
+	TCase *tc5 = tcase_create("(Internals) Parse face");
+	tcase_add_test(tc5, ut_parse_face);
+	suite_add_tcase(s, tc5);
 
 	return s;
 }
