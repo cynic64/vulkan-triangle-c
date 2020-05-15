@@ -3,38 +3,30 @@
 
 #include "vk_buffer.h"
 
-void buffer_create(
-	VkDevice device,
-	VkPhysicalDeviceMemoryProperties dev_mem_props,
-	VkDeviceSize size,
-	VkBufferUsageFlags usage,
-	VkMemoryPropertyFlags props,
-	struct Buffer *buf
-	)
+void buffer_create(VkDevice device,
+		   VkPhysicalDeviceMemoryProperties dev_mem_props,
+		   VkDeviceSize size,
+		   VkBufferUsageFlags usage,
+		   VkMemoryPropertyFlags props,
+		   struct Buffer *buf)
 {
-	create_buffer_handle(
-		device,
-		size,
-		usage,
-		&buf->handle
-		);
+	create_buffer_handle(device,
+			     size,
+			     usage,
+			     &buf->handle);
 
-	create_buffer_memory(
-		device,
-		dev_mem_props,
-		buf->handle,
-		props,
-		&buf->memory
-		);
+	create_buffer_memory(device,
+			     dev_mem_props,
+			     buf->handle,
+			     props,
+			     &buf->memory);
 
 	buf->device = device;
 }
 
-void buffer_write(
-	struct Buffer buf,
-	uint32_t size,
-	void *data
-	)
+void buffer_write(struct Buffer buf,
+		  uint32_t size,
+		  void *data)
 {
 	void *mapped;
 	VkResult res = vkMapMemory(buf.device, buf.memory, 0, size, 0, &mapped);
@@ -43,20 +35,16 @@ void buffer_write(
 	vkUnmapMemory(buf.device, buf.memory);
 }
 
-void buffer_destroy(
-	struct Buffer buf
-	)
+void buffer_destroy(struct Buffer buf)
 {
 	vkDestroyBuffer(buf.device, buf.handle, NULL);
 	vkFreeMemory(buf.device, buf.memory, NULL);
 }
 
-void create_buffer_handle(
-	VkDevice device,
-	VkDeviceSize size,
-	VkBufferUsageFlags usage,
-	VkBuffer *buffer
-	)
+void create_buffer_handle(VkDevice device,
+			  VkDeviceSize size,
+			  VkBufferUsageFlags usage,
+			  VkBuffer *buffer)
 {
 	VkBufferCreateInfo info = {0};
 	info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -68,13 +56,11 @@ void create_buffer_handle(
 	assert(res == VK_SUCCESS);
 }
 
-void create_buffer_memory(
-	VkDevice device,
-	VkPhysicalDeviceMemoryProperties real_dev_props,
-	VkBuffer buffer,
-	VkMemoryPropertyFlags req_props,
-	VkDeviceMemory *buffer_mem
-	)
+void create_buffer_memory(VkDevice device,
+			  VkPhysicalDeviceMemoryProperties real_dev_props,
+			  VkBuffer buffer,
+			  VkMemoryPropertyFlags req_props,
+			  VkDeviceMemory *buffer_mem)
 {
 	// Get the type filter of the buffer we will bind to
 	VkMemoryRequirements buf_reqs;
@@ -96,6 +82,8 @@ void create_buffer_memory(
 		}
 	}
 
+	assert(found_mem_type == 1);
+
 	// Allocate
 	VkMemoryAllocateInfo info = {0};
 	info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -107,16 +95,15 @@ void create_buffer_memory(
 
 	// Bind
 	res = vkBindBufferMemory(device, buffer, *buffer_mem, 0);
+	assert(res == VK_SUCCESS);
 }
 
-void copy_buffer(
-	VkDevice device,
-	VkQueue queue,
-	VkCommandPool cpool,
-	VkDeviceSize size,
-	VkBuffer src,
-	VkBuffer dst
-	)
+void copy_buffer(VkDevice device,
+		 VkQueue queue,
+		 VkCommandPool cpool,
+		 VkDeviceSize size,
+		 VkBuffer src,
+		 VkBuffer dst)
 {
 	// Allocate a command buffer
 	VkCommandBufferAllocateInfo alloc_info = {0};

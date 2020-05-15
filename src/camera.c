@@ -24,11 +24,9 @@ void cam_projector(uint32_t swidth, uint32_t sheight, mat4 dest)
 	glm_scale(dest, (vec3){1.0, -1.0f, 1.0f});
 }
 
-void cam_mouse_diff(
-	struct MouseTracker *t,
-	double new_x, double new_y,
-	double *out_x, double *out_y
-	)
+void cam_mouse_diff(struct MouseTracker *t,
+		    double new_x, double new_y,
+		    double *out_x, double *out_y)
 {
 	float scale_factor = 0.001;
 

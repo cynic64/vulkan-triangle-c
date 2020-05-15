@@ -1,4 +1,5 @@
 #include "vk_window.h"
+#include "vk_image.h"
 
 #include <stdio.h>
 #include <assert.h>

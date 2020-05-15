@@ -60,19 +60,16 @@ int main() {
 
     // window
     struct Window win;
-    window_create(
-        gwin,
-        phys_dev,
-        instance,
-        device,
-        surface,
-        queue_fam,
-        queue,
-        rpass,
-        swidth,
-        sheight,
-        &win
-    );
+    window_create(gwin,
+		  phys_dev,
+		  instance,
+		  device,
+		  surface,
+		  queue_fam,
+		  queue,
+		  rpass,
+		  swidth, sheight,
+		  &win);
 
     // command pool
     VkCommandPool cpool;
@@ -90,7 +87,7 @@ int main() {
     uint32_t vertex_count = sizeof(vertices) / sizeof(vertices[0]);
     VkDeviceSize vertices_size = sizeof(vertices);
 
-    uint32_t indices[] = {0, 2, 1};
+    uint32_t indices[] = {0, 1, 2};
     uint32_t index_count = sizeof(indices) / sizeof(indices[0]);
     VkDeviceSize indices_size = sizeof(indices);
 
