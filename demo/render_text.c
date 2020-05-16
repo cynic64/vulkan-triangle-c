@@ -19,126 +19,155 @@
 #define IMAGE_W 1920
 #define IMAGE_H 1080
 
-// Returns the elapsed time in floating-point seconds
-double get_elapsed(struct timespec *s_time);
+/*
+ * Initialize everything necessary to render to an image. All arguments are
+ * outputs.
+ */
+void helper_text_render_initialize(VkInstance *instance,
+				   VkDebugUtilsMessengerEXT *dbg_msgr,
+				   VkPhysicalDevice *phys_dev,
+				   uint32_t *queue_fam,
+				   VkDevice *device,
+				   VkQueue *queue,
+				   VkRenderPass *rpass);
+
+/*
+ * Create an image, bind some memory to it, and create an image view.
+ */
+void create_image(VkDevice device,
+		  uint32_t queue_fam,
+		  VkPhysicalDeviceMemoryProperties dev_mem_props,
+		  VkImageUsageFlagBits usage,
+		  VkFormat format,
+		  VkMemoryPropertyFlags req_mem_props,
+		  uint32_t width, uint32_t height,
+		  VkImage *image, VkImageView *image_view,
+		  VkDeviceMemory *image_mem);
+
+
+/*
+ * Transitions an image's layout.
+ *
+ * aspect: Image aspect being transitioned, like VK_IMAGE_ASPECT_COLOR_BIT
+ * old_lt: Old layout
+ * new_lt: New layout
+ * src_mask: What accesses to wait on, like VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+ * dst_mask: What accesses should wait, like VK_ACCESS_TRANSFER_READ_BIT
+ * src_stage: What pipeline stage to wait on
+ * dst_stage: What pipeline stage should wait
+ */
+void transition_image(VkDevice device,
+		      VkQueue queue,
+		      VkCommandPool cpool,
+		      VkImage image,
+		      VkImageAspectFlags aspect,
+		      VkAccessFlags src_mask, VkAccessFlags dst_mask,
+		      VkPipelineStageFlags src_stage,
+		      VkPipelineStageFlags dst_stage,
+		      VkImageLayout old_lt, VkImageLayout new_lt);
+
+/*
+ * Find a suitable memory type given memory requirements and properties.
+ *
+ * mem_reqs: Whatever vkGet[Buffer|Image]MemoryRequirements says
+ * req_mem_props: Properties like DEVICE_LOCAL, HOST_COHERENT, etc.
+ */
+uint32_t find_memory_type(VkPhysicalDeviceMemoryProperties dev_mem_props,
+			  VkMemoryRequirements mem_reqs,
+			  VkMemoryPropertyFlags req_mem_props);
+
+/*
+ * Copy an given image to a given buffer.
+ *
+ * The image must have layout IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL.
+ *
+ * The buffer must:
+ * - Be big enough
+ * - Have usage TRANSFER_DST
+ * - Be HOST_VISIBLE
+ * And HOST_COHERENT is a good idea too.
+ */
+void copy_image_to_buffer(VkDevice device,
+			  VkQueue queue,
+			  VkCommandPool cpool,
+			  VkImageAspectFlags aspect,
+			  uint32_t width, uint32_t height,
+			  VkImage src, VkBuffer dest);
+
+/*
+ * Format some Vulkan memory as a string.
+ * The point is to ASCII-fy images rendered by Vulkan.
+ * The image should be copied to some host-visible memory first.
+ *
+ * Assumes image was B8G8R8A8_UNORM.
+ *
+ * Out should be pre-allocated to size 4 * out_w * out_h
+ *
+ * in_w, in_h: Width and height image was, in pixels
+ * out_w, out_h: Width and height output should be, in characters
+ * out: Char array to output to
+ */
+void vk_mem_to_string(VkDevice device,
+		      uint32_t in_w, uint32_t in_h,
+		      uint32_t out_w, uint32_t out_h,
+		      VkDeviceMemory mem,
+		      char *out);
+
+/*
+ * Allocate a command buffer for one-time use and begin recording.
+ */
+void cbuf_begin_one_time(VkDevice device,
+			 VkCommandPool cpool,
+			 VkCommandBuffer *cbuf);
+
+/*
+ * End recording, submit and wait for completion of a given command buffer.
+ * Doesn't do any kind of synchronization, so not that useful outside of testing
+ * purposes.
+ *
+ * Also frees the command buffer.
+ */
+void cbuf_finish_one_time(VkDevice device,
+			  VkQueue queue,
+			  VkCommandPool cpool,
+			  VkCommandBuffer cbuf);
 
 int main()
 {
 	// Used for error checking on VK functions throughout
 	VkResult res;
 
-	// Create instance
 	VkInstance instance;
-	// NULL is pUserData
-	create_instance(default_debug_callback, NULL, &instance);
-
-	// Set up debug messenger (again, NULL is pUserData)
 	VkDebugUtilsMessengerEXT dbg_msgr;
-	init_debug(&instance, default_debug_callback, NULL, &dbg_msgr);
-
-	// Get physical device
 	VkPhysicalDevice phys_dev;
-	get_physical_device(instance, &phys_dev);
-
-	// Get queue family
-	uint32_t queue_fam = get_queue_fam(phys_dev);
-
-	// Create device
+	uint32_t queue_fam;
 	VkDevice device;
-	create_device(phys_dev, queue_fam, &device);
-
-	// Get queue
 	VkQueue queue;
-	get_queue(device, queue_fam, &queue);
-
-	// Render pass
 	VkRenderPass rpass;
-	create_rpass(device, VK_FORMAT_B8G8R8A8_UNORM, &rpass);
+	helper_text_render_initialize(&instance,
+				      &dbg_msgr,
+				      &phys_dev,
+				      &queue_fam,
+				      &device,
+				      &queue,
+				      &rpass);
 
-	// Image to render to
-	VkImageCreateInfo image_info = {
-		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-		.imageType = VK_IMAGE_TYPE_2D,
-		.format = VK_FORMAT_B8G8R8A8_UNORM,
-		.extent = {
-			.width = 1920,
-			.height = 1080,
-			.depth = 1,
-		},
-		.mipLevels = 1,
-		.arrayLayers = 1,
-		.samples = VK_SAMPLE_COUNT_1_BIT,
-		.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-		.queueFamilyIndexCount = 1,
-		.pQueueFamilyIndices = &queue_fam,
-		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
-	};
-	VkImage image;
-	res = vkCreateImage(device, &image_info, NULL, &image);
-	assert(res == VK_SUCCESS);
-
-	// Image memory
 	VkPhysicalDeviceMemoryProperties mem_props;
 	vkGetPhysicalDeviceMemoryProperties(phys_dev, &mem_props);
 
-	VkMemoryRequirements buf_reqs;
-	vkGetImageMemoryRequirements(device, image, &buf_reqs);
-
-	VkMemoryPropertyFlags req_props = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-	// Find a usable memory type
-	uint32_t mem_type_idx;
-	int found_mem_type = 0;
-	for (uint32_t i = 0; i < mem_props.memoryTypeCount; i++) {
-		uint32_t mem_type_props = mem_props.memoryTypes[i].propertyFlags;
-
-		int suitable_for_buffer = buf_reqs.memoryTypeBits & (1 << i);
-		int suitable_for_user = (mem_type_props & req_props) == req_props;
-
-		if (suitable_for_buffer && suitable_for_user) {
-			found_mem_type = 1;
-			mem_type_idx = i;
-			break;
-		}
-	}
-
-	assert(found_mem_type == 1);
-
-	// Allocate
-	VkMemoryAllocateInfo alloc_info = {0};
-	alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	alloc_info.allocationSize = buf_reqs.size;
-	alloc_info.memoryTypeIndex = mem_type_idx;
-
-	VkDeviceMemory image_mem;
-	res = vkAllocateMemory(device, &alloc_info, NULL, &image_mem);
-	assert(res == VK_SUCCESS);
-
-	// Bind
-	res = vkBindImageMemory(device, image, image_mem, 0);
-	assert(res == VK_SUCCESS);
-
-	// Image view
-	VkImageViewCreateInfo image_view_info = {
-		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-		.image = image,
-		.viewType = VK_IMAGE_VIEW_TYPE_2D,
-		.format = VK_FORMAT_B8G8R8A8_UNORM,
-		.components = {
-			.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-			.g = VK_COMPONENT_SWIZZLE_IDENTITY,
-			.b = VK_COMPONENT_SWIZZLE_IDENTITY,
-			.a = VK_COMPONENT_SWIZZLE_IDENTITY
-		},
-		.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-		.subresourceRange.baseMipLevel = 0,
-		.subresourceRange.levelCount = 1,
-		.subresourceRange.baseArrayLayer = 0,
-		.subresourceRange.layerCount = 1
-	};
+	VkImage image;
 	VkImageView image_view;
-	res = vkCreateImageView(device, &image_view_info, NULL, &image_view);
-	assert(res == VK_SUCCESS);
+	VkDeviceMemory image_mem;
+	create_image(device,
+		     queue_fam,
+		     mem_props,
+		     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+		     VK_FORMAT_B8G8R8A8_UNORM,
+		     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		     1920, 1080,
+		     &image,
+		     &image_view,
+		     &image_mem);
 
 	// Create framebuffer
 	VkFramebuffer fb;
@@ -293,137 +322,41 @@ int main()
         assert(res == VK_SUCCESS);
 
 	// Transition layout of image to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-	VkImageMemoryBarrier barrier = {0};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = image;
-	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = 1;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
-	barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-
-	VkCommandBufferAllocateInfo transition_alloc_info = {0};
-	transition_alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	transition_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	transition_alloc_info.commandPool = cpool;
-	transition_alloc_info.commandBufferCount = 1;
-
-	VkCommandBuffer transition_cbuf;
-	res = vkAllocateCommandBuffers(device, &transition_alloc_info, &transition_cbuf);
-	assert(res == VK_SUCCESS);
-
-	// Record
-	VkCommandBufferBeginInfo transition_begin_info = {0};
-	transition_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	transition_begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-	vkBeginCommandBuffer(transition_cbuf, &transition_begin_info);
-	
-	vkCmdPipelineBarrier(transition_cbuf,
-			     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-			     VK_PIPELINE_STAGE_TRANSFER_BIT,
-			     0,
-			     0, NULL,
-			     0, NULL,
-			     1, &barrier);
-
-	res = vkEndCommandBuffer(transition_cbuf);
-	assert(res == VK_SUCCESS);
-
-	VkSubmitInfo transition_submit_info = {0};
-	transition_submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	transition_submit_info.commandBufferCount = 1;
-	transition_submit_info.pCommandBuffers = &transition_cbuf;
-
-	res = vkQueueSubmit(queue, 1, &transition_submit_info, NULL);
-	assert(res == VK_SUCCESS);
-	res = vkQueueWaitIdle(queue);
-	assert(res == VK_SUCCESS);
+	transition_image(device, queue, cpool, image, VK_IMAGE_ASPECT_COLOR_BIT,
+			 VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+			 VK_ACCESS_TRANSFER_READ_BIT,
+			 VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			 VK_PIPELINE_STAGE_TRANSFER_BIT,
+			 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+			 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
 	// Create a host-visible buffer to copy the rendered image to
 	struct Buffer dest_buf;
 	buffer_create(device, mem_props, 4 * 1920 * 1080, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &dest_buf);
 
 	// Copy it
-	// Allocate a command buffer
-	VkCommandBufferAllocateInfo cbuf_alloc_info = {0};
-	cbuf_alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	cbuf_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	cbuf_alloc_info.commandPool = cpool;
-	cbuf_alloc_info.commandBufferCount = 1;
+	copy_image_to_buffer(device,
+			     queue,
+			     cpool,
+			     VK_IMAGE_ASPECT_COLOR_BIT,
+			     1920,
+			     1080,
+			     image, dest_buf.handle);
 
-	VkCommandBuffer copy_cbuf;
-	res = vkAllocateCommandBuffers(device, &cbuf_alloc_info, &copy_cbuf);
-	assert(res == VK_SUCCESS);
+	// Print
+	// Should these be #defines? I have no idea.
+	const uint32_t printed_w = 80;
+	const uint32_t printed_h = 24;
+	char image_string[printed_w * printed_h];
 
-	// Record
-	VkCommandBufferBeginInfo begin_info = {0};
-	begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	vk_mem_to_string(device,
+			 1920, 1080,
+			 printed_w, printed_h,
+			 dest_buf.memory,
+			 image_string);
 
-	vkBeginCommandBuffer(copy_cbuf, &begin_info);
+	printf(image_string);
 
-	VkBufferImageCopy region;
-	region.bufferOffset = 0;
-	region.bufferRowLength = 1920;
-	region.bufferImageHeight = 1080;
-	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	region.imageSubresource.mipLevel = 0;
-	region.imageSubresource.baseArrayLayer = 0;
-	region.imageSubresource.layerCount = 1;
-	region.imageOffset.x = 0;
-	region.imageOffset.y = 0;
-	region.imageOffset.z = 0;
-	region.imageExtent.width = 1920;
-	region.imageExtent.height = 1080;
-	region.imageExtent.depth = 1;
-		
-	vkCmdCopyImageToBuffer(copy_cbuf, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dest_buf.handle, 1, &region);
-	res = vkEndCommandBuffer(copy_cbuf);
-	assert(res == VK_SUCCESS);
-
-	// Submit
-	VkSubmitInfo cbuf_submit_info = {0};
-	cbuf_submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	cbuf_submit_info.commandBufferCount = 1;
-	cbuf_submit_info.pCommandBuffers = &copy_cbuf;
-
-	res = vkQueueSubmit(queue, 1, &cbuf_submit_info, NULL);
-	assert(res == VK_SUCCESS);
-	res = vkQueueWaitIdle(queue);
-	assert(res == VK_SUCCESS);
-
-	// Map and print
-	unsigned char pixels[1080][1920];
-	
-	void *mapped;
-	res = vkMapMemory(device, dest_buf.memory, 0, 4 * 1920 * 1080, 0, &mapped);
-        assert(res == VK_SUCCESS);
-	for (int i = 0; i < 1920 * 1080; i++) {
-		unsigned char b = ((char *)mapped)[4 * i];
-		unsigned char g = ((char *)mapped)[4 * i + 1];
-		unsigned char r = ((char *)mapped)[4 * i + 2];
-		unsigned char a = ((char *)mapped)[4 * i + 3];
-		pixels[i / 1920][i % 1920] = (r + g + b) / 3;
-	}
-	vkUnmapMemory(device, dest_buf.memory);
-
-	for (int y = 0; y < 108; y++) {
-		for (int x = 0; x < 192; x++) {
-			if (pixels[y * 10][x * 10] > 0) printf("#");
-			else printf(" ");
-		}
-		printf("\n");
-	}
-
-	vkFreeCommandBuffers(device, cpool, 1, &copy_cbuf);	
-	
 	vkDestroyImage(device, image, NULL);
 	vkFreeMemory(device, image_mem, NULL);
 
@@ -449,4 +382,280 @@ int main()
 	vkDestroyInstance(instance, NULL);
 
 	return 0;
+}
+
+void helper_text_render_initialize(VkInstance *instance,
+				   VkDebugUtilsMessengerEXT *dbg_msgr,
+				   VkPhysicalDevice *phys_dev,
+				   uint32_t *queue_fam,
+				   VkDevice *device,
+				   VkQueue *queue,
+				   VkRenderPass *rpass)
+{
+	helper_get_queue(NULL,
+			 NULL, dbg_msgr,
+			 instance,
+			 phys_dev,
+			 queue_fam,
+			 device,
+			 queue);
+
+	create_rpass(*device, VK_FORMAT_B8G8R8A8_UNORM, rpass);
+}
+
+void create_image(VkDevice device,
+		  uint32_t queue_fam,
+		  VkPhysicalDeviceMemoryProperties dev_mem_props,
+		  VkImageUsageFlagBits usage,
+		  VkFormat format,
+		  VkMemoryPropertyFlags req_mem_props,
+		  uint32_t width, uint32_t height,
+		  VkImage *image, VkImageView *image_view,
+		  VkDeviceMemory *image_mem)
+{
+	// Image handle
+	VkImageCreateInfo image_info = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+		.imageType = VK_IMAGE_TYPE_2D,
+		.format = format,
+		.extent = {
+			.width = width,
+			.height = height,
+			.depth = 1,
+		},
+		.mipLevels = 1,
+		.arrayLayers = 1,
+		.samples = VK_SAMPLE_COUNT_1_BIT,
+		.usage = usage,
+		.queueFamilyIndexCount = 1,
+		.pQueueFamilyIndices = &queue_fam,
+		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+	};
+	VkResult res = vkCreateImage(device, &image_info, NULL, image);
+	assert(res == VK_SUCCESS);
+
+	// Image memory
+	VkMemoryRequirements buf_reqs;
+	vkGetImageMemoryRequirements(device, *image, &buf_reqs);
+
+	uint32_t mem_type_idx = find_memory_type(dev_mem_props,
+						 buf_reqs,
+						 req_mem_props);
+
+	// Allocate
+	VkMemoryAllocateInfo alloc_info = {0};
+	alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	alloc_info.allocationSize = buf_reqs.size;
+	alloc_info.memoryTypeIndex = mem_type_idx;
+
+	res = vkAllocateMemory(device, &alloc_info, NULL, image_mem);
+	assert(res == VK_SUCCESS);
+
+	// Bind
+	res = vkBindImageMemory(device, *image, *image_mem, 0);
+	assert(res == VK_SUCCESS);
+
+	// Image view
+	VkImageViewCreateInfo image_view_info = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+		.image = *image,
+		.viewType = VK_IMAGE_VIEW_TYPE_2D,
+		.format = format,
+		.components = {
+			.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+			.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+			.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+			.a = VK_COMPONENT_SWIZZLE_IDENTITY
+		},
+		.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+		.subresourceRange.baseMipLevel = 0,
+		.subresourceRange.levelCount = 1,
+		.subresourceRange.baseArrayLayer = 0,
+		.subresourceRange.layerCount = 1
+	};
+	
+	res = vkCreateImageView(device, &image_view_info, NULL, image_view);
+	assert(res == VK_SUCCESS);
+}
+
+void vk_mem_to_string(VkDevice device,
+		      uint32_t in_w, uint32_t in_h,
+		      uint32_t out_w, uint32_t out_h,
+		      VkDeviceMemory mem,
+		      char *out)
+{	
+	void *mapped;
+	VkResult res = vkMapMemory(device, mem, 0, 4 * in_w * in_h, 0, &mapped);
+        assert(res == VK_SUCCESS);
+
+	unsigned char (*pixels)[in_w] = malloc(in_w * in_h);
+
+	for (int i = 0; i < in_w * in_h; i++) {
+		unsigned char b = ((char *)mapped)[4 * i];
+		unsigned char g = ((char *)mapped)[4 * i + 1];
+		unsigned char r = ((char *)mapped)[4 * i + 2];
+		unsigned char a = ((char *)mapped)[4 * i + 3];
+		pixels[i / in_w][i % in_w] = (r + g + b) / 3;
+	}
+	vkUnmapMemory(device, mem);
+
+	uint32_t scale_x = in_w / out_w;
+	uint32_t scale_y = in_h / out_h;
+
+	char *ptr = out;
+	for (uint32_t y = 0; y < out_h; y++) {
+		// Skip the last column to make room for newlines
+		for (uint32_t x = 0; x < out_w - 1; x++) {
+			if (pixels[y * scale_y][x * scale_x] > 0) *ptr++ = '#';
+			else *ptr++ = ' ';
+		}
+
+		*ptr++ = '\n';
+	}
+
+	// Subtract 1 to avoid overrun
+	*(ptr - 1) = '\0';
+	// Re-do final newline
+	*(ptr - 2) = '\n';
+
+	free(pixels);
+}
+
+void copy_image_to_buffer(VkDevice device,
+			  VkQueue queue,
+			  VkCommandPool cpool,
+			  VkImageAspectFlags aspect,
+			  uint32_t width, uint32_t height,
+			  VkImage src, VkBuffer dest)
+{
+	VkCommandBuffer cbuf;
+	cbuf_begin_one_time(device, cpool, &cbuf);
+	
+	VkBufferImageCopy region;
+	region.bufferOffset = 0;
+	region.bufferRowLength = width;
+	region.bufferImageHeight = height;
+	region.imageSubresource.aspectMask = aspect;
+	region.imageSubresource.mipLevel = 0;
+	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.layerCount = 1;
+	region.imageOffset.x = 0;
+	region.imageOffset.y = 0;
+	region.imageOffset.z = 0;
+	region.imageExtent.width = width;
+	region.imageExtent.height = height;
+	region.imageExtent.depth = 1;
+		
+	vkCmdCopyImageToBuffer(cbuf,
+			       src,
+			       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			       dest,
+			       1, &region);
+
+	cbuf_finish_one_time(device, queue, cpool, cbuf);
+}
+
+void transition_image(VkDevice device,
+		      VkQueue queue,
+		      VkCommandPool cpool,
+		      VkImage image,
+		      VkImageAspectFlags aspect,
+		      VkAccessFlags src_mask, VkAccessFlags dst_mask,
+		      VkPipelineStageFlags src_stage,
+		      VkPipelineStageFlags dst_stage,
+		      VkImageLayout old_lt, VkImageLayout new_lt)
+{
+	VkImageMemoryBarrier barrier = {0};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = old_lt;
+	barrier.newLayout = new_lt;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image;
+	barrier.subresourceRange.aspectMask = aspect;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+	barrier.srcAccessMask = src_mask;
+	barrier.dstAccessMask = dst_mask;
+
+	VkCommandBuffer cbuf;
+	cbuf_begin_one_time(device, cpool, &cbuf);
+	
+	vkCmdPipelineBarrier(cbuf,
+			     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			     VK_PIPELINE_STAGE_TRANSFER_BIT,
+			     0,
+			     0, NULL,
+			     0, NULL,
+			     1, &barrier);
+
+	cbuf_finish_one_time(device, queue, cpool, cbuf);
+}
+
+void cbuf_begin_one_time(VkDevice device,
+			 VkCommandPool cpool,
+			 VkCommandBuffer *cbuf)
+{
+	VkCommandBufferAllocateInfo alloc_info = {0};
+	alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	alloc_info.commandPool = cpool;
+	alloc_info.commandBufferCount = 1;
+
+	VkResult res = vkAllocateCommandBuffers(device, &alloc_info, cbuf);
+	assert(res == VK_SUCCESS);
+	
+	VkCommandBufferBeginInfo begin_info = {0};
+	begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(*cbuf, &begin_info);	
+}
+
+void cbuf_finish_one_time(VkDevice device,
+			  VkQueue queue,
+			  VkCommandPool cpool,
+			  VkCommandBuffer cbuf)
+{
+	VkResult res;
+	
+	res = vkEndCommandBuffer(cbuf);
+	assert(res == VK_SUCCESS);
+
+	VkSubmitInfo info = {0};
+	info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	info.commandBufferCount = 1;
+	info.pCommandBuffers = &cbuf;
+
+	res = vkQueueSubmit(queue, 1, &info, NULL);
+	assert(res == VK_SUCCESS);
+	res = vkQueueWaitIdle(queue);
+	assert(res == VK_SUCCESS);
+
+	vkFreeCommandBuffers(device, cpool, 1, &cbuf);
+}
+
+uint32_t find_memory_type(VkPhysicalDeviceMemoryProperties dev_props,
+			  VkMemoryRequirements mem_reqs,
+			  VkMemoryPropertyFlags req_props) {
+	uint32_t type_idx;
+	int found = 0;
+	for (uint32_t i = 0; i < dev_props.memoryTypeCount; i++) {
+		uint32_t cur_props = dev_props.memoryTypes[i].propertyFlags;
+
+		int suitable_for_buffer = mem_reqs.memoryTypeBits & (1 << i);
+		int suitable_for_user = (cur_props & req_props) == req_props;
+
+		if (suitable_for_buffer && suitable_for_user) {
+			found = 1;
+			type_idx = i;
+			break;
+		}
+	}
+
+	assert(found == 1);
+
+	return type_idx;
 }
