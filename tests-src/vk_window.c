@@ -194,7 +194,7 @@ START_TEST (ut_get_dims) {
         NULL
     );
     VkInstance instance;
-    create_instance(&instance, default_debug_callback, &dbg_msg_ct);
+    create_instance(default_debug_callback, &dbg_msg_ct, &instance);
 
     VkDebugUtilsMessengerEXT dbg_msgr;
     init_debug(&instance, default_debug_callback, &dbg_msg_ct, &dbg_msgr);

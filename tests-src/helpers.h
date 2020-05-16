@@ -27,18 +27,16 @@
     VkPipeline pipel = NULL;
 
 /*
- * Initializes GLFW, creates an instance, and returns it in *instance.
+ * Creates an instance, and returns it in *instance, initializing GLFW in the
+ * process if gwin is not NULL.
  *
- * Uses the default debug callback with pUserData.
+ * Uses the default debug callback, passing user_data
  *
- * If dbg_msgr is NULL, won't use it (because most tests don't bother cleaning
- * up the messenger).
- *
- * If gwin is NULL, won't set it to the GLFW window (because a lot of tests
- * don't need the window)
+ * If dbg_msgr is NULL, won't use it (because most tests don't need a handle on
+ * it).
  */
 void helper_create_instance(GLFWwindow **gwin,
-			    void *pUserData,
+			    void *user_data,
 			    VkDebugUtilsMessengerEXT *dbg_msgr,
 			    VkInstance *instance);
 

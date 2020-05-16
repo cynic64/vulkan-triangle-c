@@ -9,6 +9,9 @@
 		__typeof__ (b) _b = (b);	\
 		_a > _b ? _a : _b; })
 
+// https://stackoverflow.com/questions/4415524/common-array-length-macro-for-c#4415646
+#define ARRAY_SIZE(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
+
 typedef VkBool32 (*DebugCallback) (VkDebugUtilsMessageSeverityFlagBitsEXT,
 				   VkDebugUtilsMessageTypeFlagsEXT,
 				   const VkDebugUtilsMessengerCallbackDataEXT *,
@@ -27,11 +30,21 @@ int check_dev_exts(VkPhysicalDevice phys_dev,
 		   uint32_t req_ext_ct,
 		   char **req_exts);
 
-void create_instance(VkInstance *instance, DebugCallback dbg_cback, void *pUserData);
+/*
+ * Create a Vulkan instance.
+ *
+ * dbg_cback: Debug callback for instance creation/destruction
+ * user_data: Void pointer that Vulkan will pass to debug callback
+ * ext_ct, exts: Instance extensions to enable
+ * instance: Output
+ */
+void create_instance(DebugCallback dbg_cback,
+		     void *user_data,
+		     VkInstance *instance);
 
 /* Ensures all instance validation layers named in <req_layers> are present.
    Returns 0 if they are, -1 on failure to find a layer. */
-int check_layers(uint32_t req_layer_ct, char **req_layers);
+int check_layers(uint32_t req_layer_ct, const char * const *req_layers);
 
 void init_debug(VkInstance *instance,
 		DebugCallback dbg_cback,
@@ -51,8 +64,6 @@ void create_device(VkPhysicalDevice phys_dev,
 
 void get_queue(VkDevice device, uint32_t queue_fam, VkQueue *queue);
 
-void get_extensions(uint32_t *extension_ct, char **extensions);
-
 void populate_dbg_info(VkDebugUtilsMessengerCreateInfoEXT *dbg_info,
 		       DebugCallback dbg_cback,
 		       void *pUserData);
@@ -67,7 +78,28 @@ default_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		       const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		       void* pUserData);
 
-/* Allocates a 2D char array on the heap, [major][minor] */
-void heap_2D(char ***ppp, size_t major, size_t minor);
+/* 
+ * Allocates a 2D char array on the heap, [major][minor].
+ *
+ * Malloc's two arrays: one to store the pointers to each string, and a single
+ * continuous chunk of memory for all strings. This means that only two frees
+ * are necessary to free the entire structure: free the pointer array, and then
+ * the first element.
+ */
+char **heap_2D(size_t major, size_t minor);
+
+/*
+ * Concatenates two arrays of strings.
+ * The point is to be able to easily join sets of extensions together.
+ *
+ * Returned array is allocated by heap_2D.
+ *
+ * ext_sz: Capacity for each string
+ *
+ * Note: every element of a_exts and b_exts MUST be at least ext_sz long!
+ */
+char **merge_extensions(size_t ext_sz,
+			uint32_t a_ct, char **a_exts,
+			uint32_t b_ct, char **b_exts);
 
 #endif // VK_TOOLS_H_

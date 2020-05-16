@@ -8,6 +8,8 @@
 #include <assert.h>
 #include <string.h>
 
+#define MAX_EXTENSION_NAME_LEN 256
+
 void get_queue(VkDevice device, uint32_t queue_fam, VkQueue *queue)
 {
 	vkGetDeviceQueue(device, queue_fam, 0, queue);
@@ -54,7 +56,9 @@ uint32_t get_queue_fam(VkPhysicalDevice phys_dev)
 
 	VkQueueFamilyProperties *queue_fam_props =
 		malloc(sizeof(VkQueueFamilyProperties) * queue_fam_ct);
-	vkGetPhysicalDeviceQueueFamilyProperties(phys_dev, &queue_fam_ct, queue_fam_props);
+	vkGetPhysicalDeviceQueueFamilyProperties(phys_dev,
+						 &queue_fam_ct,
+						 queue_fam_props);
 
 	for (int i = 0; i < queue_fam_ct; i++) {
 		if (queue_fam_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
@@ -93,12 +97,10 @@ void get_physical_device(VkInstance instance, VkPhysicalDevice *phys_dev)
 	free(props);
 }
 
-void init_debug(
-	VkInstance *instance,
-	DebugCallback dbg_cback,
-	void *pUserData,
-	VkDebugUtilsMessengerEXT *dbg_msgr
-	)
+void init_debug(VkInstance *instance,
+		DebugCallback dbg_cback,
+		void *pUserData,
+		VkDebugUtilsMessengerEXT *dbg_msgr)
 {
 	VkDebugUtilsMessengerCreateInfoEXT dbg_info = {0};
 	populate_dbg_info(&dbg_info, dbg_cback, pUserData);
@@ -106,16 +108,13 @@ void init_debug(
 	create_dbg_msgr(*instance, &dbg_info, dbg_msgr);
 }
 
-void destroy_dbg_msgr(
-	VkInstance instance,
-	VkDebugUtilsMessengerEXT *dbg_msgr
-	)
+void destroy_dbg_msgr(VkInstance instance,
+		      VkDebugUtilsMessengerEXT *dbg_msgr)
 {
 	PFN_vkDestroyDebugUtilsMessengerEXT func =
-		(PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
-			instance, "vkDestroyDebugUtilsMessengerEXT"
-			);
-
+		(PFN_vkDestroyDebugUtilsMessengerEXT)
+		vkGetInstanceProcAddr(instance,
+				      "vkDestroyDebugUtilsMessengerEXT");
 	assert(func != NULL);
 
 	func(instance, *dbg_msgr, NULL);
@@ -123,26 +122,23 @@ void destroy_dbg_msgr(
 	*dbg_msgr = NULL;
 }
 
-void create_dbg_msgr(
-	VkInstance instance,
-	VkDebugUtilsMessengerCreateInfoEXT *dbg_info,
-	VkDebugUtilsMessengerEXT *dbg_msgr)
+void create_dbg_msgr(VkInstance instance,
+		     VkDebugUtilsMessengerCreateInfoEXT *dbg_info,
+		     VkDebugUtilsMessengerEXT *dbg_msgr)
 {
 	PFN_vkCreateDebugUtilsMessengerEXT func =
-		(PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
-			instance, "vkCreateDebugUtilsMessengerEXT"
-			);
+		(PFN_vkCreateDebugUtilsMessengerEXT)
+		vkGetInstanceProcAddr(instance,
+				      "vkCreateDebugUtilsMessengerEXT");
 	assert(func != NULL);
 
 	VkResult res = func(instance, dbg_info, NULL, dbg_msgr);
 	assert(res == VK_SUCCESS);
 }
 
-void populate_dbg_info(
-	VkDebugUtilsMessengerCreateInfoEXT *dbg_info,
-	DebugCallback dbg_cback,
-	void *pUserData
-	)
+void populate_dbg_info(VkDebugUtilsMessengerCreateInfoEXT *dbg_info,
+		       DebugCallback dbg_cback,
+		       void *pUserData)
 {
 	dbg_info->sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 	dbg_info->messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
@@ -156,69 +152,53 @@ void populate_dbg_info(
 	dbg_info->pUserData = pUserData;
 }
 
-void create_instance(
-	VkInstance *instance,
-	DebugCallback dbg_cback,
-	void *pUserData
-	)
+void create_instance(DebugCallback dbg_cback,
+		     void *user_data,
+		     VkInstance *instance)
 {
-	// Get required instance extensions, and ensure they exist
-	uint32_t extension_ct;
-	// Maximum 16 extensions, 255 characters each
-	char **extensions = NULL;
-	heap_2D(&extensions, 16, 255);
-
-	get_extensions(&extension_ct, extensions);
+	const char * const exts[] = {"VK_KHR_surface",
+				     "VK_KHR_xcb_surface",
+				     "VK_EXT_debug_utils"};
+	uint32_t ext_ct = ARRAY_SIZE(exts);
 
 	// Ensure all required validation layers exist
-	char *val_layers[] = {
+	const char * const val_layers[] = {
 		"VK_LAYER_KHRONOS_validation",
 	};
 	uint32_t val_layer_ct = 1;
 	assert(check_layers(val_layer_ct, val_layers) == 0);
 
-	// VkApplicationInfo
 	VkApplicationInfo app_info = {0};
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-
 	app_info.pApplicationName = "Thingy";
 	app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	app_info.pEngineName = "Epic Triangle Engine";
 	app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-
 	app_info.apiVersion = VK_API_VERSION_1_0;
 
-	// VkInstanceCreateInfo
 	VkInstanceCreateInfo instance_info = {0};
 	instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	instance_info.pApplicationInfo = &app_info;
-	instance_info.enabledExtensionCount = extension_ct;
-	instance_info.ppEnabledExtensionNames = (const char * const *) extensions;
-	instance_info.ppEnabledLayerNames = (const char * const *) val_layers;
+	instance_info.enabledExtensionCount = ext_ct;
+	instance_info.ppEnabledExtensionNames = exts;
 	instance_info.enabledLayerCount = val_layer_ct;
+	instance_info.ppEnabledLayerNames = val_layers;
 
 	// Enable debugging during instance creation/destruction
 	VkDebugUtilsMessengerCreateInfoEXT dbg_info = {0};
-	populate_dbg_info(&dbg_info, default_debug_callback, pUserData);
+	populate_dbg_info(&dbg_info, default_debug_callback, user_data);
 	instance_info.pNext = &dbg_info;
 
 	// Create
 	VkResult result = vkCreateInstance(&instance_info, NULL, instance);
 	assert(result == VK_SUCCESS);
-
-	for (int i = 0; i < extension_ct; i++) {
-		free(extensions[i]);
-	}
-	
-	free(extensions);
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL default_debug_callback(
-	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-	VkDebugUtilsMessageTypeFlagsEXT messageType,
-	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-	void* pUserData
-	)
+VKAPI_ATTR VkBool32 VKAPI_CALL
+default_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+		       VkDebugUtilsMessageTypeFlagsEXT messageType,
+		       const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+		       void* pUserData)
 {
 	printf("Validation layer: %s\n", pCallbackData->pMessage);
 
@@ -227,7 +207,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL default_debug_callback(
 	return VK_FALSE;
 }
 
-int check_layers(uint32_t req_layer_ct, char **req_layers)
+int check_layers(uint32_t req_layer_ct, const char * const *req_layers)
 {
 	uint32_t real_layer_ct;
 	vkEnumerateInstanceLayerProperties(&real_layer_ct, NULL);
@@ -290,11 +270,9 @@ int check_exts(uint32_t req_ext_ct, char **req_exts)
 	return 0;
 }
 
-int check_dev_exts(
-	VkPhysicalDevice phys_dev,
-	uint32_t req_ext_ct,
-	char **req_exts
-	)
+int check_dev_exts(VkPhysicalDevice phys_dev,
+		   uint32_t req_ext_ct,
+		   char **req_exts)
 {
 	// Returns 0 if all extensions were found, -1 otherwise
 
@@ -326,43 +304,33 @@ int check_dev_exts(
 	return 0;
 }
 
-void get_extensions(uint32_t *extension_ct, char **extensions)
+char **heap_2D(size_t major, size_t minor)
 {
-	// Get list of extensions GLFW requires, and ensure they exist
-	uint32_t glfw_ext_ct;
-	const char **glfw_exts = glfwGetRequiredInstanceExtensions(&glfw_ext_ct);
+	char *mem = malloc(sizeof(char) * major * minor);
+	char **pp = malloc(sizeof(char *) * major);
 
-	assert(glfw_exts != NULL);
-	assert(check_exts(glfw_ext_ct, (char **) glfw_exts) == 0);
-
-	// Ensure the other extensions we want exist too
-	char *our_exts[] = {
-		VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
-	};
-	uint32_t our_ext_ct = sizeof(our_exts) / sizeof(our_exts[0]);
-	assert(check_exts(our_ext_ct, our_exts) == 0);
-
-	// Write both into <extensions>
-	for (int i = 0; i < glfw_ext_ct; i++) {
-		strcpy(extensions[i], glfw_exts[i]);
+	for (int i = 0; i < major; i++) {
+		pp[i] = mem + minor * i;
 	}
 
-	for (int i = 0; i < our_ext_ct; i++) {
-		strcpy(extensions[i + glfw_ext_ct], our_exts[i]);
-	}
-
-	*extension_ct = glfw_ext_ct + our_ext_ct;
+	return pp;
 }
 
-void heap_2D(char ***ppp, size_t major, size_t minor)
+char **merge_extensions(size_t ext_sz,
+			uint32_t a_ct, char **a_exts,
+			uint32_t b_ct, char **b_exts)
 {
-	*ppp = malloc(sizeof(char *) * major);
-	assert(*ppp != NULL);
+	char **dest = heap_2D(a_ct + b_ct, ext_sz);
 
-	for (size_t i = 0; i < major; i++) {
-		char *p = malloc(sizeof(char) * minor);
-		assert(p != NULL);
-
-		(*ppp)[i] = p;
+	for (int i = 0; i < a_ct; i++) {
+		assert(strlen(a_exts[i]) < ext_sz);
+		strcpy(dest[i], a_exts[i]);
 	}
+
+	for (int i = 0; i < b_ct; i++) {
+		assert(strlen(b_exts[i]) < ext_sz);
+		strcpy(dest[i + a_ct], b_exts[i]);
+	}
+
+	return dest;
 }
