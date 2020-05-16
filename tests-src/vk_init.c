@@ -8,7 +8,8 @@
 #include "../src/glfwtools.h"
 #include "helpers.h"
 
-START_TEST (ut_create_instance_before_glfw) {
+START_TEST (ut_create_instance_before_glfw)
+{
 	// create_instance should work without GLFW, so test that
 	VK_OBJECTS;
 
@@ -18,7 +19,8 @@ START_TEST (ut_create_instance_before_glfw) {
 	ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
-START_TEST (ut_create_instance) {
+START_TEST (ut_create_instance)
+{
 	VK_OBJECTS;
 
 	init_glfw();
@@ -27,7 +29,8 @@ START_TEST (ut_create_instance) {
 	ck_assert(dbg_msg_ct == 0);
 }
 
-START_TEST (ut_check_exts) {
+START_TEST (ut_check_exts)
+{
 	int res;
 
 	char *bad_exts[] = {
@@ -46,7 +49,8 @@ START_TEST (ut_check_exts) {
 	ck_assert(res == 0);
 }
 
-START_TEST (ut_check_layers) {
+START_TEST (ut_check_layers)
+{
 	int res;
 
 	const char * const bad_layers[] = {
@@ -65,12 +69,12 @@ START_TEST (ut_check_layers) {
 	ck_assert(res == 0);
 }
 
-START_TEST (ut_get_physical_device) {
+START_TEST (ut_get_physical_device)
+{
 	// get physical device
 	VK_OBJECTS;
 
 	helper_get_phys_dev(NULL, &dbg_msg_ct, NULL, &instance, &phys_dev);
-
 	ck_assert(phys_dev != NULL);
 
 	// test
@@ -83,7 +87,8 @@ START_TEST (ut_get_physical_device) {
 	ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
-START_TEST (ut_get_queue_fam) {
+START_TEST (ut_get_queue_fam)
+{
 	// get queue family
 	VK_OBJECTS;
 
@@ -106,7 +111,8 @@ START_TEST (ut_get_queue_fam) {
 	ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
-START_TEST (ut_check_dev_exts) {
+START_TEST (ut_check_dev_exts)
+{
 	// create physical device
 	VK_OBJECTS;
 
@@ -131,7 +137,8 @@ START_TEST (ut_check_dev_exts) {
 	ck_assert(res == 0);
 }
 
-START_TEST (ut_create_device) {
+START_TEST (ut_create_device)
+{
 	// create device
 	VK_OBJECTS;
 
@@ -161,7 +168,8 @@ START_TEST (ut_create_device) {
 	ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
-START_TEST (ut_get_queue) {
+START_TEST (ut_get_queue)
+{
 	// create queue
 	VK_OBJECTS;
 
@@ -185,7 +193,8 @@ START_TEST (ut_get_queue) {
 	ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
-START_TEST(ut_init_debug) {
+START_TEST(ut_init_debug)
+{
 	// create device
 	int dbg_msg_ct = 0;
 	VkInstance instance;
@@ -217,7 +226,8 @@ START_TEST(ut_init_debug) {
 	ck_assert(dbg_msg_ct == 1);
 } END_TEST
 
-START_TEST (ut_destroy_dbg_msgr) {
+START_TEST (ut_destroy_dbg_msgr)
+{
 	// Create instance and debug messenger
 	int dbg_msg_ct = 0;
 	VkInstance instance;
@@ -234,7 +244,8 @@ START_TEST (ut_destroy_dbg_msgr) {
 	ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
-Suite *vk_init_suite(void) {
+Suite *vk_init_suite(void)
+{
 	Suite *s;
 
 	s = suite_create("Vulkan Initialization");
