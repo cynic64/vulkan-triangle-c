@@ -430,6 +430,8 @@ int main()
 	vkDestroyImage(device, image, NULL);
 	vkFreeMemory(device, image_mem, NULL);
 
+	buffer_destroy(dest_buf);
+
 	vkDestroyImageView(device, image_view, NULL);
 	vkDestroyFramebuffer(device, fb, NULL);
 
