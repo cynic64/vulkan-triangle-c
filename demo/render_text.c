@@ -7,6 +7,8 @@
 #include "../src/vk_vertex.h"
 #include "../src/vk_window.h"
 
+#include "../tests-src/helpers.h"
+
 #include <stdlib.h>
 #include <assert.h>
 #include <time.h>
@@ -24,10 +26,6 @@ int main()
 {
 	// Used for error checking on VK functions throughout
 	VkResult res;
-
-	// Initialize GLFW (create_instance requires it for now, even though we
-	// don't actually use the window in any way)
-	GLFWwindow *gwin = init_glfw();
 
 	// Create instance
 	VkInstance instance;
@@ -424,7 +422,6 @@ int main()
 		printf("\n");
 	}
 
-	// Free
 	vkFreeCommandBuffers(device, cpool, 1, &copy_cbuf);	
 	
 	vkDestroyImage(device, image, NULL);
@@ -450,8 +447,6 @@ int main()
 	vkDestroyDevice(device, NULL);
 	destroy_dbg_msgr(instance, &dbg_msgr);
 	vkDestroyInstance(instance, NULL);
-
-	glfw_cleanup(gwin);
 
 	return 0;
 }
