@@ -78,28 +78,4 @@ default_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		       const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		       void* pUserData);
 
-/* 
- * Allocates a 2D char array on the heap, [major][minor].
- *
- * Malloc's two arrays: one to store the pointers to each string, and a single
- * continuous chunk of memory for all strings. This means that only two frees
- * are necessary to free the entire structure: free the pointer array, and then
- * the first element.
- */
-char **heap_2D(size_t major, size_t minor);
-
-/*
- * Concatenates two arrays of strings.
- * The point is to be able to easily join sets of extensions together.
- *
- * Returned array is allocated by heap_2D.
- *
- * ext_sz: Capacity for each string
- *
- * Note: every element of a_exts and b_exts MUST be at least ext_sz long!
- */
-char **merge_extensions(size_t ext_sz,
-			uint32_t a_ct, char **a_exts,
-			uint32_t b_ct, char **b_exts);
-
 #endif // VK_TOOLS_H_

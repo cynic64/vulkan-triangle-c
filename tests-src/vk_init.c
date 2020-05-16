@@ -185,34 +185,6 @@ START_TEST (ut_get_queue) {
 	ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
-START_TEST (ut_heap_2D) {
-	char **strings = heap_2D(8, 4);
-
-	for (int i = 0; i < 8; i++) {
-		strcpy(strings[i], "abc");
-	}
-} END_TEST
-
-START_TEST (ut_merge_extensions) {
-	size_t max_len = 16;
-	
-	char *a[] = {"a 1", "a 2", "a 3"};
-	char a_ct = ARRAY_SIZE(a);
-
-	char *b[] = {"b 1", "b 2", "b 3"};
-	char b_ct = ARRAY_SIZE(b);
-
-	char **merged = merge_extensions(max_len, a_ct, a, b_ct, b);
-
-	for (int i = 0; i < a_ct; i++) {
-		ck_assert(strcmp(a[i], merged[i]) == 0);
-	}
-
-	for (int i = 0; i < b_ct; i++) {
-		ck_assert(strcmp(b[i], merged[i + a_ct]) == 0);
-	}
-} END_TEST
-
 START_TEST(ut_init_debug) {
 	// create device
 	int dbg_msg_ct = 0;
@@ -299,10 +271,6 @@ Suite *vk_init_suite(void) {
 	tcase_add_test(tc8, ut_get_queue);
 	suite_add_tcase(s, tc8);
 
-	TCase *tc9 = tcase_create("2D heap allocation");
-	tcase_add_test(tc9, ut_heap_2D);
-	suite_add_tcase(s, tc9);
-
 	TCase *tc10 = tcase_create("Validation layers");
 	tcase_add_test(tc10, ut_init_debug);
 	suite_add_tcase(s, tc10);
@@ -314,10 +282,6 @@ Suite *vk_init_suite(void) {
 	TCase *tc12 = tcase_create("Destroy debug messenger");
 	tcase_add_test(tc12, ut_destroy_dbg_msgr);
 	suite_add_tcase(s, tc12);
-
-	TCase *tc13 = tcase_create("Merge extensions");
-	tcase_add_test(tc13, ut_merge_extensions);
-	suite_add_tcase(s, tc13);
 
 	return s;
 }

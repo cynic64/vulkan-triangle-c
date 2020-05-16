@@ -303,34 +303,3 @@ int check_dev_exts(VkPhysicalDevice phys_dev,
 
 	return 0;
 }
-
-char **heap_2D(size_t major, size_t minor)
-{
-	char *mem = malloc(sizeof(char) * major * minor);
-	char **pp = malloc(sizeof(char *) * major);
-
-	for (int i = 0; i < major; i++) {
-		pp[i] = mem + minor * i;
-	}
-
-	return pp;
-}
-
-char **merge_extensions(size_t ext_sz,
-			uint32_t a_ct, char **a_exts,
-			uint32_t b_ct, char **b_exts)
-{
-	char **dest = heap_2D(a_ct + b_ct, ext_sz);
-
-	for (int i = 0; i < a_ct; i++) {
-		assert(strlen(a_exts[i]) < ext_sz);
-		strcpy(dest[i], a_exts[i]);
-	}
-
-	for (int i = 0; i < b_ct; i++) {
-		assert(strlen(b_exts[i]) < ext_sz);
-		strcpy(dest[i + a_ct], b_exts[i]);
-	}
-
-	return dest;
-}
