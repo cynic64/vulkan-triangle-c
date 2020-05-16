@@ -48,7 +48,7 @@ int main() {
     // create instance
     VkInstance instance;
     // NULL is pUserData
-    create_instance(&instance, default_debug_callback, NULL);
+    create_instance(default_debug_callback, NULL, &instance);
 
     // set up debug messenger (again, NULL is pUserData)
     VkDebugUtilsMessengerEXT dbg_msgr;
