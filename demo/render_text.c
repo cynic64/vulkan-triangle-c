@@ -132,6 +132,12 @@ void cbuf_finish_one_time(VkDevice device,
 			  VkCommandPool cpool,
 			  VkCommandBuffer cbuf);
 
+/*
+ * Submits a command buffer without waiting on any semaphores, or signalling any
+ * semaphores.
+ */
+void submit_syncless(VkQueue queue, VkCommandBuffer cbuf);
+
 int main()
 {
 	// Used for error checking on VK functions throughout
@@ -307,6 +313,7 @@ int main()
 		    &cbuf);
 
         // Submit
+	submit_syncless(queue, cbuf);
         VkSubmitInfo submit_info = {0};
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submit_info.waitSemaphoreCount = 0;
@@ -355,7 +362,7 @@ int main()
 			 dest_buf.memory,
 			 image_string);
 
-	printf(image_string);
+	printf("%s", image_string);
 
 	vkDestroyImage(device, image, NULL);
 	vkFreeMemory(device, image_mem, NULL);
@@ -382,6 +389,10 @@ int main()
 	vkDestroyInstance(instance, NULL);
 
 	return 0;
+}
+
+void submit_syncless(VkQueue queue, VkCommandBuffer cbuf)
+{
 }
 
 void helper_text_render_initialize(VkInstance *instance,

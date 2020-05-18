@@ -10,12 +10,13 @@
 
 #include "../tests-src/obj.h"
 #include "../tests-src/camera.h"
+#include "../tests-src/fullstack.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 
 int main(int argc, char *argv[]) {
-    int suite_count = 11;
+    int suite_count = 12;
     Suite **suites = malloc(sizeof(suites[0]) * suite_count);
 
     int suite_idx = 0;
@@ -32,6 +33,7 @@ int main(int argc, char *argv[]) {
     suites[suite_idx++] = vk_camera_suite();
     suites[suite_idx++] = vk_obj_suite();
     suites[suite_idx++] = vk_image_suite();
+    suites[suite_idx++] = vk_fullstack_suite();
 
     // If we got a command-line argument, only run that suite
     if (argc == 2) {

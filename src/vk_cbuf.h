@@ -5,21 +5,26 @@
 
 void create_cpool(VkDevice device, uint32_t queue_fam, VkCommandPool *cpool);
 
-void create_cbuf(
-	VkDevice device,
-	VkCommandPool cpool,
-	VkRenderPass rpass,
-	VkFramebuffer fb,
-	uint32_t width,
-	uint32_t height,
-	VkPipelineLayout layout,
-	VkPipeline pipel,
-	uint32_t desc_set_ct,
-	VkDescriptorSet *desc_sets,
-	VkBuffer vbuf,
-	VkBuffer ibuf,
-	uint32_t index_ct,
-	VkCommandBuffer *cbuf
-	);
+/*
+ * Creates a command buffer.
+ *
+ * Layout is only required if descriptor sets are used, and can be NULL
+ * otherwise.
+ * If desc_set_ct is 0, desc_sets can also be NULL.
+ */
+void create_cbuf(VkDevice device,
+		 VkCommandPool cpool,
+		 VkRenderPass rpass,
+		 VkFramebuffer fb,
+		 uint32_t width,
+		 uint32_t height,
+		 VkPipelineLayout layout,
+		 VkPipeline pipel,
+		 uint32_t desc_set_ct,
+		 VkDescriptorSet *desc_sets,
+		 VkBuffer vbuf,
+		 VkBuffer ibuf,
+		 uint32_t index_ct,
+		 VkCommandBuffer *cbuf);
 
 #endif // VK_CBUF_H_

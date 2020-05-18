@@ -88,6 +88,7 @@ void get_physical_device(VkInstance instance, VkPhysicalDevice *phys_dev)
 
 	for (int i = 0; i < phys_dev_ct; i++) {
 		vkGetPhysicalDeviceProperties(phys_devs[i], &props[i]);
+		// printf("Found device: %s\n", props[i].deviceName);
 	}
 
 	// Use first device

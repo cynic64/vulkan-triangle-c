@@ -81,9 +81,8 @@ START_TEST (ut_get_physical_device)
 	VkPhysicalDeviceProperties props;
 	vkGetPhysicalDeviceProperties(phys_dev, &props);
 
-	int res = strcmp(props.deviceName, "GeForce GTX 1060");
-	ck_assert(res == 0);
-
+	ck_assert(strlen(props.deviceName) > 0);
+	
 	ck_assert(dbg_msg_ct == 0);
 } END_TEST
 

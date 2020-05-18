@@ -164,7 +164,7 @@ int test_parse_face(size_t pos_idxs[3],
 		&& normal_idxs[2] == parsed_normal_idxs[2];
 
 	if (!is_match)
-		printf("Do not match: [%d %d %d] [%d %d %d] != [%d %d %d] [%d %d %d]\n",
+		printf("Do not match: [%lu %lu %lu] [%lu %lu %lu] != [%lu %lu %lu] [%lu %lu %lu]\n",
 		       pos_idxs[0], pos_idxs[1], pos_idxs[2],
 		       normal_idxs[0], normal_idxs[1], normal_idxs[2],
 		       parsed_pos_idxs[0], parsed_pos_idxs[1], parsed_pos_idxs[2],

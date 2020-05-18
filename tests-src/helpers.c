@@ -168,15 +168,13 @@ void helper_create_pipel(VkDevice device,
 			 VkVertexInputBindingDescription *binding_descs,
 			 uint32_t attr_ct,
 			 VkVertexInputAttributeDescription *attr_descs,
-			 char *vs_path,
-			 char *fs_path,
-			 VkPipelineLayout *layout,
-			 VkPipeline *pipel)
+			 char *vs_path, char *fs_path,
+			 VkPipelineLayout *layout, VkPipeline *pipel)
 {
-	// layout
+	// Layout
 	create_layout(device, 0, NULL, layout);
 
-	// shaders
+	// Shaders
 	FILE *fp;
 	size_t vs_size, fs_size;
 	char *vs_buf, *fs_buf;
@@ -198,10 +196,11 @@ void helper_create_pipel(VkDevice device,
 	fclose(fp);
 	VkShaderModule fs_mod;
 
-	// shmod
+	// Shader module
 	create_shmod(device, fs_size, fs_buf, &fs_mod);
 	VkPipelineShaderStageCreateInfo vs_stage;
 	VkPipelineShaderStageCreateInfo fs_stage;
+	// Shader stages
 	create_shtage(vs_mod, VK_SHADER_STAGE_VERTEX_BIT, &vs_stage);
 	create_shtage(fs_mod, VK_SHADER_STAGE_FRAGMENT_BIT, &fs_stage);
 	VkPipelineShaderStageCreateInfo shtages[] = {vs_stage, fs_stage};
@@ -258,27 +257,23 @@ void helper_create_bufs(VkPhysicalDevice phys_dev,
 
 	// vbuf
 	struct Buffer vbuf_complete;
-	buffer_create(
-		device,
-		mem_props,
-		vertices_size,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		&vbuf_complete
-		);
+	buffer_create(device,
+		      mem_props,
+		      vertices_size,
+		      VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		      &vbuf_complete);
 
 	buffer_write(vbuf_complete, vertices_size, (void *) vertices);
 
 	// ibuf
 	struct Buffer ibuf_complete;
-	buffer_create(
-		device,
-		mem_props,
-		indices_size,
-		VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		&ibuf_complete
-		);
+	buffer_create(device,
+		      mem_props,
+		      indices_size,
+		      VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		      &ibuf_complete);
 
 	buffer_write(ibuf_complete, indices_size, (void *) indices);
 

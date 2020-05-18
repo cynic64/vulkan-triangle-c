@@ -240,11 +240,9 @@ int main() {
         VkFence render_done_fence = render_done_fences[sync_set_idx];
 
         // wait for previous frame using this sync set to complete
-        res = VK_ERROR_UNKNOWN;
         res = vkWaitForFences(device, 1, &render_done_fence, VK_TRUE, UINT64_MAX);
         assert(res == VK_SUCCESS);
 
-        res = VK_ERROR_UNKNOWN;
         res = vkResetFences(device, 1, &render_done_fence);
         assert(res == VK_SUCCESS);
 
@@ -256,7 +254,6 @@ int main() {
         // wait for swapchain fence
         VkFence swapchain_fence = swapchain_fences[image_idx];
         if (swapchain_fence != NULL) {
-            res = VK_ERROR_UNKNOWN;
             res = vkWaitForFences(device, 1, &swapchain_fence, VK_TRUE, UINT64_MAX);
             assert(res == VK_SUCCESS);
         }
@@ -266,22 +263,17 @@ int main() {
 
         // create command buffer
         VkCommandBuffer cbuf;
-        create_cbuf(
-            device,
-            cpool,
-            rpass,
-            fb,
-            swidth,
-            sheight,
-            layout,
-            pipel,
-            0,
-            NULL,
-            vbuf.handle,
-            ibuf.handle,
-            3,
-            &cbuf
-        );
+        create_cbuf(device,
+		    cpool,
+		    rpass,
+		    fb,
+		    swidth, sheight,
+		    layout,
+		    pipel,
+		    0,
+		    NULL,
+		    vbuf.handle, ibuf.handle, 3,
+		    &cbuf);
 
         // submit
         VkSemaphore wait_sems[] = {image_avail_sem};
@@ -299,7 +291,6 @@ int main() {
         submit_info.signalSemaphoreCount = 1;
         submit_info.pSignalSemaphores = signal_sems;
 
-        res = VK_ERROR_UNKNOWN;
         res = vkQueueSubmit(queue, 1, &submit_info, render_done_fence);
         assert(res == VK_SUCCESS);
 
@@ -312,7 +303,6 @@ int main() {
         present_info.pSwapchains = &win.swapchain;
         present_info.pImageIndices = &image_idx;
 
-        res = VK_ERROR_UNKNOWN;
         res = vkQueuePresentKHR(queue, &present_info);
 
         // maybe recreate
@@ -324,7 +314,6 @@ int main() {
         }
 
         // wait idle
-        res = VK_ERROR_UNKNOWN;
         res = vkQueueWaitIdle(queue);
         assert(res == VK_SUCCESS);
 
