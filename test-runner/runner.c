@@ -53,6 +53,7 @@ int main(int argc, char *argv[]) {
         SRunner *runner = srunner_create(suites[i]);
         
         printf("--------------------------------------------------------------------------------\n");
+	printf("Suite idx: %d\n", i);
         srunner_run_all(runner, CK_NORMAL);
         
         srunner_free(runner);

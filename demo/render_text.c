@@ -314,15 +314,6 @@ int main()
 
         // Submit
 	submit_syncless(queue, cbuf);
-        VkSubmitInfo submit_info = {0};
-        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submit_info.waitSemaphoreCount = 0;
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &cbuf;
-        submit_info.signalSemaphoreCount = 0;
-
-        res = vkQueueSubmit(queue, 1, &submit_info, NULL);
-        assert(res == VK_SUCCESS);
 
         // Wait idle
         res = vkQueueWaitIdle(queue);
@@ -393,6 +384,15 @@ int main()
 
 void submit_syncless(VkQueue queue, VkCommandBuffer cbuf)
 {
+        VkSubmitInfo info = {0};
+        info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        info.waitSemaphoreCount = 0;
+        info.commandBufferCount = 1;
+        info.pCommandBuffers = &cbuf;
+        info.signalSemaphoreCount = 0;
+
+        VkResult res = vkQueueSubmit(queue, 1, &info, NULL);
+        assert(res == VK_SUCCESS);	
 }
 
 void helper_text_render_initialize(VkInstance *instance,

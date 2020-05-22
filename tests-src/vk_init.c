@@ -201,15 +201,13 @@ START_TEST(ut_init_debug)
 	uint32_t queue_fam;
 	VkDevice device;
 
-	helper_create_device(
-		NULL,
-		&dbg_msg_ct,
-		NULL,
-		&instance,
-		&phys_dev,
-		&queue_fam,
-		&device
-		);
+	helper_create_device(NULL,
+			     &dbg_msg_ct,
+			     NULL,
+			     &instance,
+			     &phys_dev,
+			     &queue_fam,
+			     &device);
 
 	// test by trying to create a 0-size buffer and making sure we receive
 	// messages

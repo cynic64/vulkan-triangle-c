@@ -28,22 +28,7 @@ void create_cbuf(VkDevice device,
 	VkResult res;
 
 	// Allocate
-	VkCommandBufferAllocateInfo alloc_info = {0};
-	alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	alloc_info.commandPool = cpool;
-	alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	alloc_info.commandBufferCount = 1;
-
-	res = vkAllocateCommandBuffers(device, &alloc_info, cbuf);
-	assert(res == VK_SUCCESS);
-
-	// Begin
-	VkCommandBufferBeginInfo begin_info = {0};
-	begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-	res = vkBeginCommandBuffer(*cbuf, &begin_info);
-	assert(res == VK_SUCCESS);
+	cbuf_begin_one_time(device, cpool, cbuf);
 
 	// Enter render pass
 	VkClearValue clear = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -117,4 +102,27 @@ void create_cbuf(VkDevice device,
 
 	res = vkEndCommandBuffer(*cbuf);
 	assert(res == VK_SUCCESS);
+}
+
+/*
+ * Allocate a command buffer for one-time use and begin recording.
+ */
+void cbuf_begin_one_time(VkDevice device,
+			 VkCommandPool cpool,
+			 VkCommandBuffer *cbuf)
+{
+	VkCommandBufferAllocateInfo alloc_info = {0};
+	alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	alloc_info.commandPool = cpool;
+	alloc_info.commandBufferCount = 1;
+
+	VkResult res = vkAllocateCommandBuffers(device, &alloc_info, cbuf);
+	assert(res == VK_SUCCESS);
+	
+	VkCommandBufferBeginInfo begin_info = {0};
+	begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(*cbuf, &begin_info);	
 }

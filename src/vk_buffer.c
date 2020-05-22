@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "vk_buffer.h"
+#include "vk_cbuf.h"
 
 void buffer_create(VkDevice device,
 		   VkPhysicalDeviceMemoryProperties dev_mem_props,
@@ -98,36 +99,20 @@ void create_buffer_memory(VkDevice device,
 	assert(res == VK_SUCCESS);
 }
 
-void copy_buffer(VkDevice device,
-		 VkQueue queue,
+void copy_buffer(VkDevice device, VkQueue queue,
 		 VkCommandPool cpool,
 		 VkDeviceSize size,
-		 VkBuffer src,
-		 VkBuffer dst)
+		 VkBuffer src, VkBuffer dst)
 {
-	// Allocate a command buffer
-	VkCommandBufferAllocateInfo alloc_info = {0};
-	alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	alloc_info.commandPool = cpool;
-	alloc_info.commandBufferCount = 1;
-
 	VkCommandBuffer cbuf;
-	VkResult res = vkAllocateCommandBuffers(device, &alloc_info, &cbuf);
-	assert(res == VK_SUCCESS);
-
+	cbuf_begin_one_time(device, cpool, &cbuf);
+	
 	// Record
-	VkCommandBufferBeginInfo begin_info = {0};
-	begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-	vkBeginCommandBuffer(cbuf, &begin_info);
-
 	VkBufferCopy region = {0};
 	region.size = size;
 	vkCmdCopyBuffer(cbuf, src, dst, 1, &region);
 
-	res = vkEndCommandBuffer(cbuf);
+	VkResult res = vkEndCommandBuffer(cbuf);
 	assert(res == VK_SUCCESS);
 
 	// Submit

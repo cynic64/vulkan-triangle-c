@@ -106,6 +106,37 @@ START_TEST (ut_create_cbuf)
 	ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
+START_TEST (ut_cbuf_begin_one_time)
+{
+	VK_OBJECTS;
+	helper_get_queue(&gwin,
+			 &dbg_msg_ct,
+			 NULL,
+			 &instance,
+			 &phys_dev,
+			 &queue_fam,
+			 &device,
+			 &queue);
+
+	VkCommandPool cpool;
+	create_cpool(device, queue_fam, &cpool);
+	
+	VkCommandBuffer cbuf;
+	cbuf_begin_one_time(device, cpool, &cbuf);
+
+	// We should now be able to end the command buffer without any problems
+	VkResult res = vkEndCommandBuffer(cbuf);
+	ck_assert(res == VK_SUCCESS);
+
+	// And also free it without problems
+	res = vkQueueWaitIdle(queue);
+	ck_assert(res == VK_SUCCESS);
+
+	vkFreeCommandBuffers(device, cpool, 1, &cbuf);
+
+	ck_assert(dbg_msg_ct == 0);
+} END_TEST
+
 Suite *vk_cbuf_suite(void) {
 	Suite *s;
 
@@ -118,6 +149,10 @@ Suite *vk_cbuf_suite(void) {
 	TCase *tc2 = tcase_create("Create command buffer");
 	tcase_add_test(tc2, ut_create_cbuf);
 	suite_add_tcase(s, tc2);
+
+	TCase *tc3 = tcase_create("Begin one-time command buffer");
+	tcase_add_test(tc3, ut_cbuf_begin_one_time);
+	suite_add_tcase(s, tc3);
 
 	return s;
 }

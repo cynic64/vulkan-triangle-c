@@ -6,7 +6,7 @@
 void create_cpool(VkDevice device, uint32_t queue_fam, VkCommandPool *cpool);
 
 /*
- * Creates a command buffer.
+ * Creates a command buffer, allocating it from a command pool.
  *
  * Layout is only required if descriptor sets are used, and can be NULL
  * otherwise.
@@ -26,5 +26,12 @@ void create_cbuf(VkDevice device,
 		 VkBuffer ibuf,
 		 uint32_t index_ct,
 		 VkCommandBuffer *cbuf);
+
+/*
+ * Allocate a command buffer for one-time use and begin recording.
+ */
+void cbuf_begin_one_time(VkDevice device,
+			 VkCommandPool cpool,
+			 VkCommandBuffer *cbuf);
 
 #endif // VK_CBUF_H_

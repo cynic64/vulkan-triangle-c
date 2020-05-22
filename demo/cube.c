@@ -141,60 +141,50 @@ int main()
 
 	// staging
 	struct Buffer staging_buf;
-	buffer_create(
-		device,
-		mem_props,
-		vertices_size > indices_size ? vertices_size : indices_size,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		&staging_buf
-		);
+	buffer_create(device,
+		      mem_props,
+		      vertices_size > indices_size ? vertices_size : indices_size,
+		      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		      &staging_buf);
 
 	// vertex
 	buffer_write(staging_buf, vertices_size, (void *) vertices);
 
 	struct Buffer vbuf;
-	buffer_create(
-		device,
-		mem_props,
-		vertices_size,
-		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		&vbuf
-		);
+	buffer_create(device,
+		      mem_props,
+		      vertices_size,
+		      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		      &vbuf);
 
 	// copy staging to vertex
-	copy_buffer(
-		device,
-		queue,
-		cpool,
-		vertices_size,
-		staging_buf.handle,
-		vbuf.handle
-		);
+	copy_buffer(device,
+		    queue,
+		    cpool,
+		    vertices_size,
+		    staging_buf.handle,
+		    vbuf.handle);
 
 	// index buffer
 	buffer_write(staging_buf, indices_size, (void *) indices);
 
 	struct Buffer ibuf;
-	buffer_create(
-		device,
-		mem_props,
-		vertices_size,
-		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		&ibuf
-		);
+	buffer_create(device,
+		      mem_props,
+		      vertices_size,
+		      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		      &ibuf);
 
 	// copy staging to index
-	copy_buffer(
-		device,
-		queue,
-		cpool,
-		indices_size,
-		staging_buf.handle,
-		ibuf.handle
-		);
+	copy_buffer(device,
+		    queue,
+		    cpool,
+		    indices_size,
+		    staging_buf.handle,
+		    ibuf.handle);
 
 	// uniform data
 	struct OrbitCamera cam = cam_orbit_new(0.0f, 0.0f);
@@ -219,13 +209,11 @@ int main()
 		create_sem(device, &render_done_sems[i]);
 		create_fence(device, VK_FENCE_CREATE_SIGNALED_BIT, &render_done_fences[i]);
 
-		uniforms[i] = uniform_create(
-			device,
-			desc_set_pool,
-			mem_props,
-			VK_SHADER_STAGE_VERTEX_BIT,
-			uniform_size
-			);
+		uniforms[] = uniform_create(device,
+					    desc_set_pool,
+					    mem_props,
+					    VK_SHADER_STAGE_VERTEX_BIT,
+					    uniform_size);
 	}
 
 	for (int i = 0; i < win.image_ct; i++) {
@@ -275,18 +263,16 @@ int main()
 
 	// pipeline
 	VkPipeline pipel = NULL;
-	create_pipel(
-		device,
-		2,
-		shtages,
-		layout,
-		VERTEX_3_POS_COLOR_BINDING_CT,
-		VERTEX_3_POS_COLOR_BINDINGS,
-		VERTEX_3_POS_COLOR_ATTRIBUTE_CT,
-		VERTEX_3_POS_COLOR_ATTRIBUTES,
-		rpass,
-		&pipel
-		);
+	create_pipel(device,
+		     2,
+		     shtages,
+		     layout,
+		     VERTEX_3_POS_COLOR_BINDING_CT,
+		     VERTEX_3_POS_COLOR_BINDINGS,
+		     VERTEX_3_POS_COLOR_ATTRIBUTE_CT,
+		     VERTEX_3_POS_COLOR_ATTRIBUTES,
+		     rpass,
+		     &pipel);
 
 	// cleanup shader modules
 	vkDestroyShaderModule(device, vs_mod, NULL);
@@ -336,22 +322,20 @@ int main()
 
 		// create command buffer
 		VkCommandBuffer cbuf;
-		create_cbuf(
-			device,
-			cpool,
-			rpass,
-			fb,
-			swidth,
-			sheight,
-			layout,
-			pipel,
-			1,
-			&uniform.set,
-			vbuf.handle,
-			ibuf.handle,
-			index_count,
-			&cbuf
-			);
+		create_cbuf(device,
+			    cpool,
+			    rpass,
+			    fb,
+			    swidth,
+			    sheight,
+			    layout,
+			    pipel,
+			    1,
+			    &uniform.set,
+			    vbuf.handle,
+			    ibuf.handle,
+			    index_count,
+			    &cbuf);
 
 		// submit
 		VkSemaphore wait_sems[] = {image_avail_sem};

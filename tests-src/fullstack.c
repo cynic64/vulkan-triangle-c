@@ -13,7 +13,7 @@
 
 #include "helpers.h"
 
-START_TEST(ut_fail)
+START_TEST(ut_triangle_windowless)
 {
 	ck_assert(0);
 }
@@ -24,7 +24,7 @@ Suite *vk_fullstack_suite(void) {
 	s = suite_create("Full-stack tests");
 
 	TCase *tc1 = tcase_create("Windowless triangle");
-	tcase_add_test(tc1, ut_fail);
+	tcase_add_test(tc1, ut_triangle_windowless);
 	suite_add_tcase(s, tc1);
 
 	return s;
