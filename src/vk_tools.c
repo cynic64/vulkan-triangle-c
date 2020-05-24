@@ -71,7 +71,7 @@ uint32_t get_queue_fam(VkPhysicalDevice phys_dev)
 	exit(1);
 }
 
-void get_physical_device(VkInstance instance, VkPhysicalDevice *phys_dev)
+uint32_t get_physical_device(VkInstance instance, VkPhysicalDevice *phys_dev)
 {
 	uint32_t phys_dev_ct;
 	vkEnumeratePhysicalDevices(instance, &phys_dev_ct, NULL);
@@ -96,6 +96,8 @@ void get_physical_device(VkInstance instance, VkPhysicalDevice *phys_dev)
 	*phys_dev = phys_devs[0];
 	free(phys_devs);
 	free(props);
+
+	return 0;
 }
 
 void init_debug(VkInstance *instance,

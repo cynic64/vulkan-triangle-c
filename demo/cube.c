@@ -55,6 +55,22 @@ int main()
 	VkPhysicalDevice phys_dev;
 	get_physical_device(instance, &phys_dev);
 
+	uint32_t phys_dev_ct;
+	vkEnumeratePhysicalDevices(instance, &phys_dev_ct, NULL);
+	VkPhysicalDevice *phys_devs = malloc(sizeof(VkPhysicalDevice) * phys_dev_ct);
+	vkEnumeratePhysicalDevices(instance, &phys_dev_ct, phys_devs);
+	VkPhysicalDeviceProperties *props =
+		malloc(sizeof(VkPhysicalDeviceProperties) * phys_dev_ct);
+
+	for (int i = 0; i < phys_dev_ct; i++) {
+		vkGetPhysicalDeviceProperties(phys_devs[i], &props[i]);
+		printf("Found device: %s\n", props[i].deviceName);
+	}
+
+	printf("Using device: %s\n", props[0].deviceName);
+	free(phys_devs);
+	free(props);
+
 	// Get queue family
 	uint32_t queue_fam = get_queue_fam(phys_dev);
 
@@ -209,7 +225,7 @@ int main()
 		create_sem(device, &render_done_sems[i]);
 		create_fence(device, VK_FENCE_CREATE_SIGNALED_BIT, &render_done_fences[i]);
 
-		uniforms[] = uniform_create(device,
+		uniforms[i] = uniform_create(device,
 					    desc_set_pool,
 					    mem_props,
 					    VK_SHADER_STAGE_VERTEX_BIT,

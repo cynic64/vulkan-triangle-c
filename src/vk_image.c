@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdlib.h>
 
 #include "vk_image.h"
 #include "ll_vk_image.h"
@@ -120,17 +121,52 @@ void image_copy_to_buffer(VkDevice device,
 	VkResult res = vkEndCommandBuffer(cbuf);
 	assert(res == VK_SUCCESS);
 
-	VkSubmitInfo info = {0};
-	info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	info.commandBufferCount = 1;
-	info.pCommandBuffers = &cbuf;
-
-	res = vkQueueSubmit(queue, 1, &info, NULL);
-	assert(res == VK_SUCCESS);
-	res = vkQueueWaitIdle(queue);
-	assert(res == VK_SUCCESS);
+	submit_syncless(queue, cbuf);
 
 	vkFreeCommandBuffers(device, cpool, 1, &cbuf);
+}
+
+void vk_mem_to_string(VkDevice device,
+		      uint32_t in_w, uint32_t in_h,
+		      uint32_t out_w, uint32_t out_h,
+		      VkDeviceMemory mem,
+		      char *out)
+{	
+	void *mapped;
+	VkResult res = vkMapMemory(device, mem, 0, 4 * in_w * in_h, 0, &mapped);
+        assert(res == VK_SUCCESS);
+
+	unsigned char (*pixels)[in_w] = malloc(in_w * in_h);
+
+	for (int i = 0; i < in_w * in_h; i++) {
+		unsigned char b = ((char *)mapped)[4 * i];
+		unsigned char g = ((char *)mapped)[4 * i + 1];
+		unsigned char r = ((char *)mapped)[4 * i + 2];
+		unsigned char a = ((char *)mapped)[4 * i + 3];
+		pixels[i / in_w][i % in_w] = (r + g + b) / 3;
+	}
+	vkUnmapMemory(device, mem);
+
+	uint32_t scale_x = in_w / out_w;
+	uint32_t scale_y = in_h / out_h;
+
+	char *ptr = out;
+	for (uint32_t y = 0; y < out_h; y++) {
+		// Skip the last column to make room for newlines
+		for (uint32_t x = 0; x < out_w - 1; x++) {
+			if (pixels[y * scale_y][x * scale_x] > 0) *ptr++ = '#';
+			else *ptr++ = ' ';
+		}
+
+		*ptr++ = '\n';
+	}
+
+	// Subtract 1 to avoid overrun
+	*(ptr - 1) = '\0';
+	// Re-do final newline
+	*(ptr - 2) = '\n';
+
+	free(pixels);
 }
 
 void image_handle_create(VkDevice device,

@@ -54,7 +54,11 @@ void init_debug(VkInstance *instance,
 void destroy_dbg_msgr(VkInstance instance,
 		      VkDebugUtilsMessengerEXT *dbg_msgr);
 
-void get_physical_device(VkInstance instance, VkPhysicalDevice *phys_dev);
+/*
+ * Returns the index of the chosen device, as well as outputting an actual
+ * VkPhysicalDevice to phys_dev.
+ */
+uint32_t get_physical_device(VkInstance instance, VkPhysicalDevice *phys_dev);
 
 uint32_t get_queue_fam(VkPhysicalDevice phys_dev);
 

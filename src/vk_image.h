@@ -61,6 +61,25 @@ void image_copy_to_buffer(VkDevice device,
 			  VkImage src, VkBuffer dest);
 
 /*
+ * Format some Vulkan memory as a string.
+ * The point is to ASCII-fy images rendered by Vulkan.
+ * The image should be copied to some host-visible memory first.
+ *
+ * Assumes image was B8G8R8A8_UNORM.
+ *
+ * Out should be pre-allocated to size 4 * out_w * out_h
+ *
+ * in_w, in_h: Width and height image was, in pixels
+ * out_w, out_h: Width and height output should be, in characters
+ * out: Char array to output to
+ */
+void vk_mem_to_string(VkDevice device,
+		      uint32_t in_w, uint32_t in_h,
+		      uint32_t out_w, uint32_t out_h,
+		      VkDeviceMemory mem,
+		      char *out);
+
+/*
  * Creates an image handle. Does not bind memory to it or create an image view.
  */
 void image_handle_create(VkDevice device,

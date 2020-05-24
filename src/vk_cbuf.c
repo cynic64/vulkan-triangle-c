@@ -104,9 +104,6 @@ void create_cbuf(VkDevice device,
 	assert(res == VK_SUCCESS);
 }
 
-/*
- * Allocate a command buffer for one-time use and begin recording.
- */
 void cbuf_begin_one_time(VkDevice device,
 			 VkCommandPool cpool,
 			 VkCommandBuffer *cbuf)
@@ -125,4 +122,20 @@ void cbuf_begin_one_time(VkDevice device,
 	begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
 	vkBeginCommandBuffer(*cbuf, &begin_info);	
+}
+
+void submit_syncless(VkQueue queue, VkCommandBuffer cbuf)
+{
+        VkSubmitInfo info = {0};
+        info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        info.waitSemaphoreCount = 0;
+        info.commandBufferCount = 1;
+        info.pCommandBuffers = &cbuf;
+        info.signalSemaphoreCount = 0;
+
+        VkResult res = vkQueueSubmit(queue, 1, &info, NULL);
+        assert(res == VK_SUCCESS);
+
+	res = vkQueueWaitIdle(queue);
+	assert(res == VK_SUCCESS);
 }

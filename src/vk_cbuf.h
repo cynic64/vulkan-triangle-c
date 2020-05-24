@@ -34,4 +34,10 @@ void cbuf_begin_one_time(VkDevice device,
 			 VkCommandPool cpool,
 			 VkCommandBuffer *cbuf);
 
+/*
+ * Submits a command buffer without waiting on any semaphores, or signalling any
+ * semaphores.
+ */
+void submit_syncless(VkQueue queue, VkCommandBuffer cbuf);
+
 #endif // VK_CBUF_H_

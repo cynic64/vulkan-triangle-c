@@ -190,7 +190,7 @@ START_TEST (ut_image_view_create)
 	ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
-START_TEST (ut_image_copy_to_buffer)
+START_TEST (ut_image_transition)
 {
 	VK_OBJECTS;
 	helper_get_queue(&gwin,
@@ -262,20 +262,12 @@ START_TEST (ut_image_copy_to_buffer)
 	VkResult res = vkEndCommandBuffer(cbuf);
 	ck_assert(res == VK_SUCCESS);
 
-	VkSubmitInfo submit_info = {0};
-	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submit_info.commandBufferCount = 1;
-	submit_info.pCommandBuffers = &cbuf;
-
-	res = vkQueueSubmit(queue, 1, &submit_info, NULL);
-	ck_assert(res == VK_SUCCESS);
-	res = vkQueueWaitIdle(queue);
-	ck_assert(res == VK_SUCCESS);
-
+	submit_syncless(queue, cbuf);
+	
 	ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
-START_TEST (ut_image_transition)
+START_TEST (ut_image_copy_to_buffer)
 {
 	VK_OBJECTS;
 	helper_get_queue(&gwin,
