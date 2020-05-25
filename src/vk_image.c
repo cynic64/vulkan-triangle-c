@@ -35,6 +35,14 @@ void image_create(VkDevice device,
 			  &image->view);
 }
 
+void image_destroy(VkDevice device,
+		   struct Image image)
+{
+	vkDestroyImage(device, image.handle, NULL);
+	vkDestroyImageView(device, image.view, NULL);
+	vkFreeMemory(device, image.memory, NULL);
+}
+
 void image_transition(VkDevice device,
 		      VkQueue queue,
 		      VkCommandPool cpool,
@@ -64,8 +72,8 @@ void image_transition(VkDevice device,
 	cbuf_begin_one_time(device, cpool, &cbuf);
 	
 	vkCmdPipelineBarrier(cbuf,
-			     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-			     VK_PIPELINE_STAGE_TRANSFER_BIT,
+			     src_stage,
+			     dst_stage,
 			     0,
 			     0, NULL,
 			     0, NULL,
@@ -188,6 +196,7 @@ void image_handle_create(VkDevice device,
 		.mipLevels = 1,
 		.arrayLayers = 1,
 		.samples = VK_SAMPLE_COUNT_1_BIT,
+		.tiling = VK_IMAGE_TILING_LINEAR,
 		.usage = usage,
 		.queueFamilyIndexCount = 1,
 		.pQueueFamilyIndices = &queue_fam,

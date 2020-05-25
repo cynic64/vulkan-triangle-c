@@ -5,6 +5,7 @@
 #include <check.h>
 #include <vulkan/vulkan.h>
 
+#include "../src/vk_tools.h"
 #include "../src/vk_image.h"
 #include "../src/ll_vk_image.h"
 #include "../src/vk_window.h"
@@ -46,6 +47,40 @@ START_TEST (ut_image_create)
 
 	VkFramebuffer fb;
 	create_framebuffer(device, 1920, 1080, rpass, image.view, &fb);
+
+	ck_assert(dbg_msg_ct == 0);
+}
+
+START_TEST (ut_image_destroy)
+{
+	VK_OBJECTS;
+	helper_create_device(&gwin,
+			     &dbg_msg_ct,
+			     &dbg_msgr,
+			     &instance,
+			     &phys_dev,
+			     &queue_fam,
+			     &device);
+
+        VkPhysicalDeviceMemoryProperties dev_mem_props;
+        vkGetPhysicalDeviceMemoryProperties(phys_dev, &dev_mem_props);
+	
+	struct Image image;
+	image_create(device,
+		     queue_fam,
+		     dev_mem_props,
+		     DEFAULT_FMT,
+		     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+		     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		     VK_IMAGE_ASPECT_COLOR_BIT,
+		     1920, 1080,
+		     &image);
+
+	image_destroy(device, image);
+
+	vkDestroyDevice(device, NULL);
+	destroy_dbg_msgr(instance, &dbg_msgr);
+	vkDestroyInstance(instance, NULL);
 
 	ck_assert(dbg_msg_ct == 0);
 }
@@ -359,6 +394,10 @@ Suite *vk_image_suite(void)
 	TCase *tc6 = tcase_create("Transition image layout");
 	tcase_add_test(tc6, ut_image_transition);
 	suite_add_tcase(s, tc6);
+
+	TCase *tc7 = tcase_create("Destroy Image");
+	tcase_add_test(tc7, ut_image_destroy);
+	suite_add_tcase(s, tc7);
 
 	return s;
 }

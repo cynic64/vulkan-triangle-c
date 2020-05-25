@@ -108,4 +108,37 @@ static VkVertexInputAttributeDescription VERTEX_2_POS_COLOR_ATTRIBUTES[] = {
 
 static uint32_t VERTEX_2_POS_COLOR_ATTRIBUTE_CT = 2;
 
+/* Vertex2PosTex */
+struct Vertex2PosTex {
+	vec2 pos;
+	vec2 texc;
+};
+
+static VkVertexInputBindingDescription VERTEX_2_POS_TEX_BINDINGS[] = {
+	{
+		.binding = 0,
+		.stride = sizeof(struct Vertex2PosTex),
+		.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+	}
+};
+
+static uint32_t VERTEX_2_POS_TEX_BINDING_CT = 1;
+
+static VkVertexInputAttributeDescription VERTEX_2_POS_TEX_ATTRIBUTES[] = {
+	{
+		.location = 0,
+		.binding = 0,
+		.format = VK_FORMAT_R32G32_SFLOAT,
+		.offset = offsetof(struct Vertex2PosTex, pos)
+	},
+	{
+		.location = 1,
+		.binding = 0,
+		.format = VK_FORMAT_R32G32_SFLOAT,
+		.offset = offsetof(struct Vertex2PosTex, texc)
+	}
+};
+
+static uint32_t VERTEX_2_POS_TEX_ATTRIBUTE_CT = 2;
+
 #endif // VK_VERTEX_H_

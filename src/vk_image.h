@@ -107,4 +107,10 @@ void image_view_create(VkDevice device,
 		       VkImage image,
 		       VkImageView *view);
 
+/*
+ * Destroys an Image struct and all associated resources
+ */
+void image_destroy(VkDevice device,
+		   struct Image image);
+
 #endif // VK_IMAGE_H_

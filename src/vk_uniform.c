@@ -2,51 +2,46 @@
 
 #include "vk_uniform.h"
 
-struct Uniform uniform_create(
-	VkDevice device,
-	VkDescriptorPool dpool,
-	VkPhysicalDeviceMemoryProperties mem_props,
-	VkShaderStageFlags stage,
-	VkDeviceSize size
-	)
+struct Uniform uniform_create(VkDevice device,
+			      VkDescriptorPool dpool,
+			      VkPhysicalDeviceMemoryProperties mem_props,
+			      VkShaderStageFlags stage,
+			      VkDeviceSize size)
 {
 	struct Uniform u = {0};
 	u.size = size;
 	u.device = device;
 
 	// Create buffer
-	buffer_create(
-		device,
-		mem_props,
-		size,
-		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		&u.buffer
-		);
+	buffer_create(device,
+		      mem_props,
+		      size,
+		      VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		      &u.buffer);
 
 	// Create descriptor set
 	VkDescriptorSetLayoutBinding u_desc_binding;
-	create_descriptor_binding(0, stage, &u_desc_binding);
+	create_descriptor_binding(0,
+				  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+				  stage,
+				  &u_desc_binding);
 
 	create_descriptor_layout(device, 1, &u_desc_binding, &u.layout);
 
-	allocate_descriptor_set(
-		device,
-		dpool,
-		u.layout,
-		u.buffer.handle,
-		0,
-		size,
-		&u.set
-		);
+	allocate_descriptor_set(device,
+				dpool,
+				u.layout,
+				u.buffer.handle,
+				0,
+				size,
+				&u.set);
 
 	return u;
 }
 
-void uniform_write(
-	struct Uniform u,
-	void *data
-	)
+void uniform_write(struct Uniform u,
+		   void *data)
 {
 	buffer_write(u.buffer, u.size, data);
 }
@@ -57,15 +52,13 @@ void uniform_destroy(struct Uniform u)
 	buffer_destroy(u.buffer);
 }
 
-void allocate_descriptor_set(
-	VkDevice device,
-	VkDescriptorPool dpool,
-	VkDescriptorSetLayout layout,
-	VkBuffer buffer,
-	uint32_t location,
-	uint32_t size,
-	VkDescriptorSet *set
-	)
+void allocate_descriptor_set(VkDevice device,
+			     VkDescriptorPool dpool,
+			     VkDescriptorSetLayout layout,
+			     VkBuffer buffer,
+			     uint32_t location,
+			     uint32_t size,
+			     VkDescriptorSet *set)
 {
 	VkDescriptorSetAllocateInfo alloc_info = {0};
 	alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -95,46 +88,43 @@ void allocate_descriptor_set(
 	vkUpdateDescriptorSets(device, 1, &desc_write, 0, NULL);
 }
 
-void create_descriptor_pool(
-	VkDevice device,
-	uint32_t desc_cap,
-	uint32_t set_cap,
-	VkDescriptorPool *dpool
-	)
+void create_descriptor_pool(VkDevice device,
+			    uint32_t desc_cap,
+			    uint32_t set_cap,
+			    VkDescriptorPool *dpool)
 {
-	VkDescriptorPoolSize pool_size = {0};
-	pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	pool_size.descriptorCount = desc_cap;
+	VkDescriptorPoolSize pool_sizes[2] = {0};
+	pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	pool_sizes[0].descriptorCount = desc_cap;
+	pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	pool_sizes[1].descriptorCount = desc_cap;
 
 	VkDescriptorPoolCreateInfo info = {0};
 	info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	info.poolSizeCount = 1;
-	info.pPoolSizes = &pool_size;
+	info.poolSizeCount = 2;
+	info.pPoolSizes = pool_sizes;
 	info.maxSets = set_cap;
 
 	VkResult res = vkCreateDescriptorPool(device, &info, NULL, dpool);
 	assert(res == VK_SUCCESS);
 }
 
-void create_descriptor_binding(
-	uint32_t location,
-	VkShaderStageFlags stage,
-	VkDescriptorSetLayoutBinding *binding
-	)
+void create_descriptor_binding(uint32_t location,
+			       VkDescriptorType type,
+			       VkShaderStageFlags stage,
+			       VkDescriptorSetLayoutBinding *binding)
 {
-	binding->binding = 0;
-	binding->descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	binding->binding = location;
+	binding->descriptorType = type;
 	binding->descriptorCount = 1;
 	binding->stageFlags = stage;
 	binding->pImmutableSamplers = NULL;
 }
 
-void create_descriptor_layout(
-	VkDevice device,
-	uint32_t binding_ct,
-	VkDescriptorSetLayoutBinding *bindings,
-	VkDescriptorSetLayout *layout
-	)
+void create_descriptor_layout(VkDevice device,
+			      uint32_t binding_ct,
+			      VkDescriptorSetLayoutBinding *bindings,
+			      VkDescriptorSetLayout *layout)
 {
 	VkDescriptorSetLayoutCreateInfo info = {0};
 	info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
