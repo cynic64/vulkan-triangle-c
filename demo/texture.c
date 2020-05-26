@@ -148,46 +148,41 @@ int main() {
 		    staging_buf.handle,
 		    ibuf.handle);
 
-	// Load image
-	int image_w, image_h, image_channels;
-	unsigned char *image_data = stbi_load("assets/images/texture.png",
-					      &image_w, &image_h,
-					      &image_channels, 0);
-	assert(image_w == TEXTURE_W);
-	assert(image_h == TEXTURE_H);
-	assert(image_channels == 4);
+	// Load texture
+	int texture_w, texture_h, texture_channels;
+	unsigned char *texture_data = stbi_load("assets/images/texture.png",
+					      &texture_w, &texture_h,
+					      &texture_channels, 0);
+	assert(texture_w == TEXTURE_W);
+	assert(texture_h == TEXTURE_H);
+	assert(texture_channels == 4);
 	printf("Width, height, channels: %d, %d, %d\n",
-	       image_w, image_h, image_channels);
+	       texture_w, texture_h, texture_channels);
+	uint32_t texture_size = texture_w * texture_h * texture_channels;
+
+	// Copy to staging buffer for texture
+	struct Buffer texture_staging;
+	// buffer_create(device, mem_props,
 
 	// Texture
-	struct Image image;
+	struct Image texture;
 	image_create(device, queue_fam, mem_props,
 		     VK_FORMAT_R8G8B8A8_SRGB,
 		     VK_IMAGE_USAGE_SAMPLED_BIT,
 		     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		     VK_IMAGE_ASPECT_COLOR_BIT,
 		     TEXTURE_W, TEXTURE_H,
-		     &image);
+		     &texture);
 
-	unsigned char *image_data_2 = malloc(image_w * image_h * image_channels);
-	for (int y = 0; y < image_h; y++) {
-		for (int x = 0; x < image_w; x++) {
-			unsigned char val = (unsigned char) (((float) y / (float) image_h) * ((float) x / (float) image_w) * 255.0);
-
-			image_data_2[y * image_w * image_channels + x * image_channels] = val;
-		}
-	}
-
-	uint32_t size = image_w * image_h * image_channels;
-	void *mapped_image;
-	res = vkMapMemory(device, image.memory, 0,
-				   size, 0, &mapped_image);
+	void *mapped_texture;
+	res = vkMapMemory(device, texture.memory, 0,
+				   texture_size, 0, &mapped_texture);
         assert(res == VK_SUCCESS);
-        memcpy(mapped_image, image_data, (size_t) size);
-	vkUnmapMemory(device, image.memory);
+        memcpy(mapped_texture, texture_data, (size_t) texture_size);
+	vkUnmapMemory(device, texture.memory);
 
 	image_transition(device, queue, cpool,
-			 image.handle, VK_IMAGE_ASPECT_COLOR_BIT,
+			 texture.handle, VK_IMAGE_ASPECT_COLOR_BIT,
 			 VK_ACCESS_HOST_WRITE_BIT,
 			 VK_ACCESS_SHADER_READ_BIT,
 			 VK_PIPELINE_STAGE_HOST_BIT,
@@ -242,7 +237,7 @@ int main() {
 
 	VkDescriptorImageInfo texture_info = {0};
 	texture_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	texture_info.imageView = image.view;
+	texture_info.imageView = texture.view;
 	texture_info.sampler = sampler;
 
 	VkWriteDescriptorSet desc_write = {0};
@@ -442,7 +437,7 @@ int main() {
 	}
 
 	vkDestroySampler(device, sampler, NULL);
-	image_destroy(device, image);
+	image_destroy(device, texture);
 
 	vkDestroyDescriptorPool(device, dpool, NULL);
 	vkDestroyDescriptorSetLayout(device, s_layout, NULL);
@@ -462,7 +457,7 @@ int main() {
 
 	glfw_cleanup(gwin);
 
-	stbi_image_free(image_data);
+	stbi_image_free(texture_data);
 
 	return 0;
 }

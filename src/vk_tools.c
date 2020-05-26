@@ -203,6 +203,11 @@ default_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		       const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		       void* pUserData)
 {
+	// Hack to ignore false positive
+	// https://github.com/KhronosGroup/Vulkan-Loader/issues/262
+	if (strstr(pCallbackData->pMessage,
+		   "wrong ELF class: ELFCLASS32") != NULL) return VK_FALSE;
+	
 	printf("Validation layer: %s\n", pCallbackData->pMessage);
 
 	if (pUserData != NULL) (*(int*)pUserData)++;
