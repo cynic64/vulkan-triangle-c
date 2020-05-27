@@ -6,7 +6,7 @@
 #include "vk_buffer.h"
 
 /* 
- * Helper for creating uniforms.
+ * Helper for creating a uniform, either based on a buffer or an image.
  * Creates a descriptor set as well as the underlying buffer.
  * .buffer and .set are the only fields that should be publicly accessed.
  */
