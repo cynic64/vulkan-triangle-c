@@ -9,6 +9,8 @@
 
 #include "../src/vk_window.h"
 
+#define DEFAULT_FMT VK_FORMAT_B8G8R8A8_UNORM
+
 #define VK_OBJECTS \
     GLFWwindow *gwin = NULL; \
     int dbg_msg_ct = 0; \

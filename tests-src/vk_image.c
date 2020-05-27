@@ -15,8 +15,6 @@
 
 #include "helpers.h"
 
-#define DEFAULT_FMT VK_FORMAT_B8G8R8A8_UNORM
-
 START_TEST (ut_image_create)
 {
 	VK_OBJECTS;
@@ -297,7 +295,7 @@ START_TEST (ut_image_transition)
 	VkResult res = vkEndCommandBuffer(cbuf);
 	ck_assert(res == VK_SUCCESS);
 
-	submit_syncless(queue, cbuf);
+	submit_syncless(device, queue, cpool, cbuf);
 	
 	ck_assert(dbg_msg_ct == 0);
 } END_TEST

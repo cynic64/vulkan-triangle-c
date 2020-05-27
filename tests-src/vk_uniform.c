@@ -47,7 +47,7 @@ START_TEST (ut_create_decriptor_layout)
 			     &shtages[1]);
 
 	// format doesn't matter since we don't use a swapchain
-	create_rpass(device, VK_FORMAT_B8G8R8A8_UNORM, &rpass);
+	create_rpass(device, DEFAULT_FMT, &rpass);
 
 	create_layout(device, 1, &desc_layout, &pipe_layout);
 

@@ -99,15 +99,15 @@ void create_buffer_memory(VkDevice device,
 	assert(res == VK_SUCCESS);
 }
 
-void copy_buffer(VkDevice device, VkQueue queue,
-		 VkCommandPool cpool,
-		 VkDeviceSize size,
-		 VkBuffer src, VkBuffer dst)
+void copy_buffer_buffer(VkDevice device,
+			VkQueue queue,
+			VkCommandPool cpool,
+			VkDeviceSize size,
+			VkBuffer src, VkBuffer dst)
 {
 	VkCommandBuffer cbuf;
 	cbuf_begin_one_time(device, cpool, &cbuf);
 	
-	// Record
 	VkBufferCopy region = {0};
 	region.size = size;
 	vkCmdCopyBuffer(cbuf, src, dst, 1, &region);
@@ -115,17 +115,48 @@ void copy_buffer(VkDevice device, VkQueue queue,
 	VkResult res = vkEndCommandBuffer(cbuf);
 	assert(res == VK_SUCCESS);
 
-	// Submit
-	VkSubmitInfo submit_info = {0};
-	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submit_info.commandBufferCount = 1;
-	submit_info.pCommandBuffers = &cbuf;
+	submit_syncless(device, queue, cpool, cbuf);
+}
 
-	res = vkQueueSubmit(queue, 1, &submit_info, NULL);
-	assert(res == VK_SUCCESS);
-	res = vkQueueWaitIdle(queue);
+void copy_buffer_image(VkDevice device, VkQueue queue, VkCommandPool cpool,
+		       VkImageAspectFlagBits aspect,
+		       uint32_t width, uint32_t height,
+		       VkBuffer src, VkImage dst)
+{
+	VkCommandBuffer cbuf;
+	cbuf_begin_one_time(device, cpool, &cbuf);
+	
+	// Record
+        VkBufferImageCopy region = {
+		.bufferOffset = 0,
+		.bufferRowLength = width,
+		.bufferImageHeight = height,
+		.imageSubresource = {
+			.aspectMask = aspect,
+			.mipLevel = 0,
+			.baseArrayLayer = 0,
+			.layerCount = 1
+		},
+		.imageOffset = {
+			.x = 0,
+			.y = 0,
+			.z = 0
+		},
+		.imageExtent = {
+			.width = width,
+			.height = height,
+			.depth = 1
+		}
+	};
+
+	vkCmdCopyBufferToImage(cbuf, src,
+			       dst,
+			       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			       1,
+			       &region);
+
+	VkResult res = vkEndCommandBuffer(cbuf);
 	assert(res == VK_SUCCESS);
 
-	// Free
-	vkFreeCommandBuffers(device, cpool, 1, &cbuf);
+	submit_syncless(device, queue, cpool, cbuf);
 }

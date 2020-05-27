@@ -129,9 +129,7 @@ void image_copy_to_buffer(VkDevice device,
 	VkResult res = vkEndCommandBuffer(cbuf);
 	assert(res == VK_SUCCESS);
 
-	submit_syncless(queue, cbuf);
-
-	vkFreeCommandBuffers(device, cpool, 1, &cbuf);
+	submit_syncless(device, queue, cpool, cbuf);
 }
 
 void vk_mem_to_string(VkDevice device,

@@ -122,12 +122,12 @@ int main() {
 		      &vbuf);
 
 	// Copy staging to vertex
-	copy_buffer(device,
-		    queue,
-		    cpool,
-		    vertices_size,
-		    staging_buf.handle,
-		    vbuf.handle);
+	copy_buffer_buffer(device,
+			   queue,
+			   cpool,
+			   vertices_size,
+			   staging_buf.handle,
+			   vbuf.handle);
 
 	// Index buffer
 	buffer_write(staging_buf, indices_size, (void *) indices);
@@ -141,12 +141,12 @@ int main() {
 		      &ibuf);
 
 	// Copy staging to index
-	copy_buffer(device,
-		    queue,
-		    cpool,
-		    indices_size,
-		    staging_buf.handle,
-		    ibuf.handle);
+	copy_buffer_buffer(device,
+			   queue,
+			   cpool,
+			   indices_size,
+			   staging_buf.handle,
+			   ibuf.handle);
 
 	// Load texture
 	int texture_w, texture_h, texture_channels;
@@ -162,32 +162,44 @@ int main() {
 
 	// Copy to staging buffer for texture
 	struct Buffer texture_staging;
-	// buffer_create(device, mem_props,
+	buffer_create(device, mem_props,
+		      texture_size,
+		      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		      &texture_staging);
+
+	buffer_write(texture_staging, texture_size, texture_data);
 
 	// Texture
 	struct Image texture;
 	image_create(device, queue_fam, mem_props,
 		     VK_FORMAT_R8G8B8A8_SRGB,
-		     VK_IMAGE_USAGE_SAMPLED_BIT,
-		     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		     VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+		     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		     VK_IMAGE_ASPECT_COLOR_BIT,
 		     TEXTURE_W, TEXTURE_H,
 		     &texture);
 
-	void *mapped_texture;
-	res = vkMapMemory(device, texture.memory, 0,
-				   texture_size, 0, &mapped_texture);
-        assert(res == VK_SUCCESS);
-        memcpy(mapped_texture, texture_data, (size_t) texture_size);
-	vkUnmapMemory(device, texture.memory);
+	image_transition(device, queue, cpool,
+			 texture.handle, VK_IMAGE_ASPECT_COLOR_BIT,
+			 0,
+			 VK_ACCESS_TRANSFER_WRITE_BIT,
+			 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+			 VK_PIPELINE_STAGE_TRANSFER_BIT,
+			 VK_IMAGE_LAYOUT_UNDEFINED,
+			 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+	copy_buffer_image(device, queue, cpool,
+			  VK_IMAGE_ASPECT_COLOR_BIT, TEXTURE_W, TEXTURE_H,
+			  texture_staging.handle, texture.handle);
 
 	image_transition(device, queue, cpool,
 			 texture.handle, VK_IMAGE_ASPECT_COLOR_BIT,
-			 VK_ACCESS_HOST_WRITE_BIT,
+			 VK_ACCESS_TRANSFER_WRITE_BIT,
 			 VK_ACCESS_SHADER_READ_BIT,
-			 VK_PIPELINE_STAGE_HOST_BIT,
+			 VK_PIPELINE_STAGE_TRANSFER_BIT,
 			 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-			 VK_IMAGE_LAYOUT_UNDEFINED,
+			 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	// Sampler

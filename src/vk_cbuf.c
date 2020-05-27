@@ -124,7 +124,8 @@ void cbuf_begin_one_time(VkDevice device,
 	vkBeginCommandBuffer(*cbuf, &begin_info);	
 }
 
-void submit_syncless(VkQueue queue, VkCommandBuffer cbuf)
+void submit_syncless(VkDevice device, VkQueue queue,
+		     VkCommandPool cpool, VkCommandBuffer cbuf)
 {
         VkSubmitInfo info = {0};
         info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -138,4 +139,6 @@ void submit_syncless(VkQueue queue, VkCommandBuffer cbuf)
 
 	res = vkQueueWaitIdle(queue);
 	assert(res == VK_SUCCESS);
+
+	vkFreeCommandBuffers(device, cpool, 1, &cbuf);
 }

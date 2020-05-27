@@ -43,10 +43,19 @@ void create_buffer_memory(VkDevice device,
 			  VkMemoryPropertyFlags req_props,
 			  VkDeviceMemory *buffer_mem);
 
-void copy_buffer(VkDevice device,
-		 VkQueue queue,
-		 VkCommandPool cpool,
-		 VkDeviceSize size,
-		 VkBuffer src, VkBuffer dst);
+/*
+ * Copies one buffer to another.
+ */
+void copy_buffer_buffer(VkDevice device, VkQueue queue, VkCommandPool cpool,
+			VkDeviceSize size,
+			VkBuffer src, VkBuffer dst);
 
+/*
+ * Copies a buffer to an image.
+ * Image must already be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL.
+ */
+void copy_buffer_image(VkDevice device, VkQueue queue, VkCommandPool cpool,
+		       VkImageAspectFlagBits aspect,
+		       uint32_t width, uint32_t height,
+		       VkBuffer src, VkImage dst);
 #endif // VK_BUFFER_H_

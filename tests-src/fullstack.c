@@ -16,7 +16,6 @@
 
 #include "helpers.h"
 
-#define DEFAULT_FMT VK_FORMAT_B8G8R8A8_UNORM
 #define IM_WIDTH 1920
 #define IM_HEIGHT 1080
 
@@ -76,7 +75,7 @@ START_TEST(ut_triangle_windowless)
 	create_cbuf(device, cpool, rpass, fb, IM_WIDTH, IM_HEIGHT, layout,
 		    pipel, 0, NULL, vbuf, ibuf, 3, &cbuf);
 
-	submit_syncless(queue, cbuf);
+	submit_syncless(device, queue, cpool, cbuf);
 
 	// Copy to buffer
 	image_transition(device, queue, cpool,
