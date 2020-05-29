@@ -1,63 +1,67 @@
 #include <assert.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include "vk_uniform.h"
 
-struct Uniform uniform_create(VkDevice device,
-			      VkDescriptorPool dpool,
-			      VkPhysicalDeviceMemoryProperties mem_props,
-			      VkShaderStageFlags stage,
-			      VkDeviceSize size)
+void set_create(VkDevice device, VkDescriptorPool dpool,
+		uint32_t desc_ct,
+		VkDescriptorType *desc_types,
+		VkDescriptorBufferInfo *buffer_infos,
+		VkDescriptorImageInfo *image_infos,
+		VkShaderStageFlags *stages,
+		struct Set *set)
 {
-	struct Uniform u = {0};
-	u.size = size;
-	u.device = device;
+	// Create descriptors
+	VkDescriptorSetLayoutBinding *descs = malloc(sizeof(descs[0]) * desc_ct);
 
-	// Create buffer
-	buffer_create(device,
-		      mem_props,
-		      size,
-		      VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		      &u.buffer);
+	for (int i = 0; i < desc_ct; i++) {
+		create_descriptor_binding(i, desc_types[i], stages[i],
+					  &descs[i]);
+	}
 
-	// Create descriptor set
-	VkDescriptorSetLayoutBinding u_desc_binding;
-	create_descriptor_binding(0,
-				  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-				  stage,
-				  &u_desc_binding);
+	// Create set layout
+	create_descriptor_layout(device, desc_ct, descs, &set->layout);
 
-	create_descriptor_layout(device, 1, &u_desc_binding, &u.layout);
+	// Allocate set
+	allocate_descriptor_set(device, dpool, set->layout, &set->handle);
 
-	allocate_descriptor_set(device,
-				dpool,
-				u.layout,
-				u.buffer.handle,
-				0,
-				size,
-				&u.set);
-
-	return u;
+	// Write
+	for (int i = 0; i < desc_ct; i++) {
+		write_descriptor_general(device, set->handle,
+					 i, desc_types[i],
+					 buffer_infos[i].buffer,
+					 buffer_infos[i].range,
+					 image_infos[i].sampler,
+					 image_infos[i].imageView,
+					 image_infos[i].imageLayout);
+	}
 }
 
-void uniform_write(struct Uniform u,
-		   void *data)
+void write_descriptor_general(VkDevice device,
+			      VkDescriptorSet set, uint32_t location,
+			      VkDescriptorType type,
+			      VkBuffer buf, VkDeviceSize buf_size,
+			      VkSampler img_sampler, VkImageView img_view,
+			      VkImageLayout img_layout)
 {
-	buffer_write(u.buffer, u.size, data);
-}
-
-void uniform_destroy(struct Uniform u)
-{
-	vkDestroyDescriptorSetLayout(u.device, u.layout, NULL);
-	buffer_destroy(u.buffer);
+	if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+		assert(buf != NULL);
+		assert(buf_size > 0);
+		write_descriptor_buffer(device, set, location, buf, buf_size);
+	} else if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+		assert(img_sampler != NULL);
+		assert(img_view != NULL);
+		write_descriptor_image(device, set, location,
+				       img_sampler, img_view, img_layout);
+	} else {
+		printf("(write_descriptor_general) Bad type: %d\n", type);
+		exit(1);
+	}
 }
 
 void allocate_descriptor_set(VkDevice device,
-			     VkDescriptorPool dpool,
-			     VkDescriptorSetLayout layout,
-			     VkBuffer buffer,
-			     uint32_t location,
-			     uint32_t size,
+			     VkDescriptorPool dpool, VkDescriptorSetLayout layout,
 			     VkDescriptorSet *set)
 {
 	VkDescriptorSetAllocateInfo alloc_info = {0};
@@ -68,8 +72,12 @@ void allocate_descriptor_set(VkDevice device,
 
 	VkResult res = vkAllocateDescriptorSets(device, &alloc_info, set);
 	assert(res == VK_SUCCESS);
+}
 
-	// Fuckin' magic
+void write_descriptor_buffer(VkDevice device,
+			     VkDescriptorSet set, uint32_t location,
+			     VkBuffer buffer, VkDeviceSize size)
+{
 	VkDescriptorBufferInfo buffer_info = {0};
 	buffer_info.buffer = buffer;
 	buffer_info.offset = 0;
@@ -77,13 +85,36 @@ void allocate_descriptor_set(VkDevice device,
 
 	VkWriteDescriptorSet desc_write = {0};
 	desc_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	desc_write.dstSet = *set;
+	desc_write.dstSet = set;
 	desc_write.dstBinding = location;
 	desc_write.dstArrayElement = 0;
 
 	desc_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	desc_write.descriptorCount = 1;
 	desc_write.pBufferInfo = &buffer_info;
+
+	vkUpdateDescriptorSets(device, 1, &desc_write, 0, NULL);
+}
+
+void write_descriptor_image(VkDevice device,
+			    VkDescriptorSet set, uint32_t location,
+			    VkSampler sampler,
+			    VkImageView view, VkImageLayout layout)
+{
+	VkDescriptorImageInfo image_info = {0};
+	image_info.sampler = sampler;
+	image_info.imageView = view;
+	image_info.imageLayout = layout;
+
+	VkWriteDescriptorSet desc_write = {0};
+	desc_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	desc_write.dstSet = set;
+	desc_write.dstBinding = location;
+	desc_write.dstArrayElement = 0;
+
+	desc_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	desc_write.descriptorCount = 1;
+	desc_write.pImageInfo = &image_info;
 
 	vkUpdateDescriptorSets(device, 1, &desc_write, 0, NULL);
 }

@@ -8,6 +8,8 @@
 #include <GLFW/glfw3.h>
 
 #include "../src/vk_window.h"
+#include "../src/vk_buffer.h"
+#include "../src/vk_image.h"
 
 #define DEFAULT_FMT VK_FORMAT_B8G8R8A8_UNORM
 
@@ -142,8 +144,33 @@ void helper_create_shtage(VkDevice device,
 /*
  * Creates a vertex buffer and an index buffer for a triangle.
  */
-void helper_create_bufs(VkPhysicalDevice phys_dev,
-			VkDevice device,
+void helper_create_bufs(VkPhysicalDevice phys_dev, VkDevice device,
 			VkBuffer *vbuf, VkBuffer *ibuf);
+
+/*
+ * Initializes a Buffer struct.
+ *
+ * Usages: TRANSFER_SRC, VERTEX_BUFFER, INDEX_BUFFER, UNIFORM_BUFFER
+ * Properties: HOST_VISIBLE, HOST_COHERENT
+ */
+void helper_create_buffer_with_data(VkPhysicalDevice phys_dev, VkDevice device,
+				    VkDeviceSize size, void *data,
+				    struct Buffer *buf);
+
+/*
+ * Initializes an Image struct with some data.
+ * 
+ * Is host-readable and host-writable.
+ *
+ * Will be left as VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+ */
+void helper_create_image_with_data(VkPhysicalDevice phys_dev,
+				   VkDevice device, uint32_t queue_fam, VkQueue queue,
+				   VkCommandPool cpool,
+				   VkFormat format, VkImageUsageFlags usage,
+				   VkImageAspectFlagBits aspect,
+				   uint32_t width, uint32_t height,
+				   VkDeviceSize size, void *data,
+				   struct Image *image);
 
 #endif // T_HELPERS_H_

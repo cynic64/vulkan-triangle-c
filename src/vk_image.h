@@ -34,11 +34,9 @@ void image_create(VkDevice device,
  * src_stage: What pipeline stage to wait on
  * dst_stage: What pipeline stage should wait
  */
-void image_transition(VkDevice device,
-		      VkQueue queue,
+void image_transition(VkDevice device, VkQueue queue,
 		      VkCommandPool cpool,
-		      VkImage image,
-		      VkImageAspectFlags aspect,
+		      VkImage image, VkImageAspectFlags aspect,
 		      VkAccessFlags src_mask, VkAccessFlags dst_mask,
 		      VkPipelineStageFlags src_stage,
 		      VkPipelineStageFlags dst_stage,
@@ -53,12 +51,12 @@ void image_transition(VkDevice device,
  * - Be big enough
  * - Have usage TRANSFER_DST
  */
-void image_copy_to_buffer(VkDevice device,
-			  VkQueue queue,
-			  VkCommandPool cpool,
-			  VkImageAspectFlags aspect,
-			  uint32_t width, uint32_t height,
-			  VkImage src, VkBuffer dest);
+void copy_image_buffer(VkDevice device,
+		       VkQueue queue,
+		       VkCommandPool cpool,
+		       VkImageAspectFlags aspect,
+		       uint32_t width, uint32_t height,
+		       VkImage src, VkBuffer dest);
 
 /*
  * Format some Vulkan memory as a string.

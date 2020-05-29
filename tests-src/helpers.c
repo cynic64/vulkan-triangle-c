@@ -281,3 +281,59 @@ void helper_create_bufs(VkPhysicalDevice phys_dev,
 	*vbuf = vbuf_complete.handle;
 	*ibuf = ibuf_complete.handle;
 }
+
+void helper_create_buffer_with_data(VkPhysicalDevice phys_dev, VkDevice device,
+				    VkDeviceSize size, void *data,
+				    struct Buffer *buf)
+{
+	VkPhysicalDeviceMemoryProperties dev_mem_props;
+	vkGetPhysicalDeviceMemoryProperties(phys_dev, &dev_mem_props);
+
+	buffer_create(device, dev_mem_props,
+		      size,
+		      VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+		      | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+		      | VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+		      | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+		      | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		      buf);
+
+	buffer_write(*buf, size, data);
+}
+
+void helper_create_image_with_data(VkPhysicalDevice phys_dev, VkDevice device,
+				   uint32_t queue_fam, VkQueue queue,
+				   VkCommandPool cpool,
+				   VkFormat format, VkImageUsageFlags usage,
+				   VkImageAspectFlagBits aspect,
+				   uint32_t width, uint32_t height,
+				   VkDeviceSize size, void *data,
+				   struct Image *image)
+{
+	VkPhysicalDeviceMemoryProperties dev_mem_props;
+	vkGetPhysicalDeviceMemoryProperties(phys_dev, &dev_mem_props);
+
+	struct Buffer staging;
+	helper_create_buffer_with_data(phys_dev, device, size, data, &staging);
+
+	image_create(device, queue_fam, dev_mem_props,
+		     format,
+		     usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+		     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		     aspect,
+		     width, height,
+		     image);
+
+	image_transition(device, queue, cpool,
+			 image->handle, aspect,
+			 0,
+			 VK_ACCESS_TRANSFER_WRITE_BIT,
+			 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+			 VK_PIPELINE_STAGE_TRANSFER_BIT,
+			 VK_IMAGE_LAYOUT_UNDEFINED,
+			 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+	copy_buffer_image(device, queue, cpool, aspect, width, height,
+			  staging.handle, image->handle);
+}

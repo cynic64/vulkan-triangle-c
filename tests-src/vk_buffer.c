@@ -268,17 +268,11 @@ START_TEST (ut_copy_buffer_image)
 	vkGetPhysicalDeviceMemoryProperties(phys_dev, &dev_mem_props);
 
 	// Fill a buffer with some data
+	struct Buffer buf;
 	unsigned char data[] = {0, 1, 2, 3};
 	VkDeviceSize data_size = sizeof(data);
-
-	struct Buffer buf;
-	buffer_create(device, dev_mem_props,
-		      data_size,
-		      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		      &buf);
-
-	buffer_write(buf, data_size, data);
+	
+	helper_create_buffer_with_data(phys_dev, device, data_size, data, &buf);
 
 	// Copy it to an image
 	struct Image image;

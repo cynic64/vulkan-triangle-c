@@ -148,7 +148,7 @@ int main()
 		{ .pos = {-1.0, 1.0, 1.0}, .color = {1.0, 1.0, 0.0} },
 		{ .pos = {1.0, 1.0, 1.0}, .color = {1.0, 1.0, 0.0} },
 	};
-	uint32_t vertex_count = sizeof(vertices) / sizeof(vertices[0]);
+	uint32_t vertex_count = ARRAY_SIZE(verices);
 	VkDeviceSize vertices_size = sizeof(vertices);
 
 	uint32_t indices[] = {0, 3, 1, 2, 3, 0, 4, 5, 7, 7, 6, 4, 8, 9, 11, 11, 10, 8, 12, 13, 15, 15, 14, 12, 16, 17, 19, 19, 18, 16, 20, 21, 23, 23, 22, 20};

@@ -5,45 +5,71 @@
 
 #include "vk_buffer.h"
 
-/* 
- * Helper for creating a uniform, either based on a buffer or an image.
- * Creates a descriptor set as well as the underlying buffer.
- * .buffer and .set are the only fields that should be publicly accessed.
- */
-struct Uniform {
-	VkDevice device;
-	struct Buffer buffer;
-	VkDeviceSize size;
-	VkDescriptorSet set;
+struct Set {
+	VkDescriptorSet handle;
 	VkDescriptorSetLayout layout;
 };
 
-struct Uniform uniform_create(VkDevice device,
-			      VkDescriptorPool dpool,
-			      VkPhysicalDeviceMemoryProperties mem_props,
-			      VkShaderStageFlags stage,
-			      VkDeviceSize size);
-
-/* Writes to the buffer inside the given Uniform.
- * The size of the write is determined by the size given to the Uniform upon
- * creation.
+/*
+ * Create a VkDescriptorSet.
+ *
+ * desc_ct: How may descriptors this set has
+ * desc_types: What type each descriptor is (buffer or sampled image)
+ * buffer_infos: Buffer info or NULL if descriptor is not a buffer
+ * image_infos: Image info or NULL if descriptor is not an image
+ * stages: What shader stages each descriptor will be used in
  */
-void uniform_write(struct Uniform u,
-		   void *data);
-
-void uniform_destroy(struct Uniform u);
+void set_create(VkDevice device, VkDescriptorPool dpool,
+		uint32_t desc_ct,
+		VkDescriptorType *desc_types,
+		VkDescriptorBufferInfo *buffer_infos,
+		VkDescriptorImageInfo *image_infos,
+		VkShaderStageFlags *stages,
+		struct Set *set);
 
 /*
  * Allocates a single descriptor set from a descriptor pool.
  */
 void allocate_descriptor_set(VkDevice device,
-			     VkDescriptorPool dpool,
-			     VkDescriptorSetLayout layout,
-			     VkBuffer buffer,
-			     uint32_t location,
-			     uint32_t size,
+			     VkDescriptorPool dpool, VkDescriptorSetLayout layout,
 			     VkDescriptorSet *set);
 
+/*
+ * Write any kind of descriptor (image or buffer).
+ *
+ * location: Descriptor index (within set)
+ * type: Descriptor type, also determines what other arguments are used
+ * buf: If type == UNIFORM_BUFFER, buffer to write
+ * buf_size: If type == UNIFORM_BUFFER, buffer size
+ * img_sampler: If type == COMBINED_IMAGE_SAMPLER, image sampler
+ * img_view: If type == COMBINED_IMAGE_SAMPLER, image view
+ * img_layout: If type == COMBINED_IMAGE_SAMPLER, image layout
+ *
+ * If an argument is not relevant, leave it as NULL.
+ */
+void write_descriptor_general(VkDevice device,
+			      VkDescriptorSet set, uint32_t location,
+			      VkDescriptorType type,
+			      VkBuffer buf, VkDeviceSize buf_size,
+			      VkSampler img_sampler, VkImageView img_view,
+			      VkImageLayout img_layout);
+
+/*
+ * Write a buffer to a specific descriptor within a set.
+ *
+ * location: Descriptor index (so within set)
+ */
+void write_descriptor_buffer(VkDevice device,
+			     VkDescriptorSet set, uint32_t location,
+			     VkBuffer buffer, VkDeviceSize size);
+
+/*
+ * Write an image to a descriptor within a set.
+ */
+void write_descriptor_image(VkDevice device,
+			    VkDescriptorSet set, uint32_t location,
+			    VkSampler sampler,
+			    VkImageView view, VkImageLayout layout);
 /*
  * Creates a descriptor pool.
  *

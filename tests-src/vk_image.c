@@ -300,7 +300,7 @@ START_TEST (ut_image_transition)
 	ck_assert(dbg_msg_ct == 0);
 } END_TEST
 
-START_TEST (ut_image_copy_to_buffer)
+START_TEST (ut_copy_image_buffer)
 {
 	VK_OBJECTS;
 	helper_get_queue(&gwin,
@@ -314,19 +314,23 @@ START_TEST (ut_image_copy_to_buffer)
 
 	VkPhysicalDeviceMemoryProperties dev_mem_props;
 	vkGetPhysicalDeviceMemoryProperties(phys_dev, &dev_mem_props);
-	
-	struct Image image;
-	image_create(device, queue_fam, dev_mem_props,
-		     DEFAULT_FMT,
-		     VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-		     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		     VK_IMAGE_ASPECT_COLOR_BIT,
-		     1920, 1080,
-		     &image);
+
+	// Intialize single-pixel image with 0xff000000
+	unsigned char data[] = {0x80, 0, 0, 0};
+	VkDeviceSize data_size = sizeof(data);
 
 	VkCommandPool cpool;
 	create_cpool(device, queue_fam, &cpool);
 	
+	struct Image image;
+	helper_create_image_with_data(phys_dev, device, queue_fam, queue, cpool,
+				      DEFAULT_FMT,
+				      VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+				      VK_IMAGE_ASPECT_COLOR_BIT,
+				      1, 1,
+				      data_size, data,
+				      &image);
+
 	image_transition(device, queue, cpool,
 			 image.handle, VK_IMAGE_ASPECT_COLOR_BIT,
 			 VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
@@ -344,20 +348,15 @@ START_TEST (ut_image_copy_to_buffer)
 		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		      &buf);
 
-	// Write 255 to the first byte in the image so we can verify it changes
-	// when we copy the image into it
-	unsigned char data = 255;
-	buffer_write(buf, 1, &data);
-
-	// Copy and make sure the first byte is 0 again
-	image_copy_to_buffer(device, queue, cpool,
-			     VK_IMAGE_ASPECT_COLOR_BIT, 1, 1,
-			     image.handle, buf.handle);
+	// Copy and compare
+	copy_image_buffer(device, queue, cpool,
+			  VK_IMAGE_ASPECT_COLOR_BIT, 1, 1,
+			  image.handle, buf.handle);
 
 	void *mapped;
 	VkResult res = vkMapMemory(buf.device, buf.memory, 0, 1, 0, &mapped);
         ck_assert(res == VK_SUCCESS);
-	ck_assert(memcmp(mapped, "\0", 1) == 0);
+	ck_assert(memcmp(mapped, data, data_size) == 0);
 	vkUnmapMemory(buf.device, buf.memory);
 
 	ck_assert(dbg_msg_ct == 0);
@@ -396,6 +395,10 @@ Suite *vk_image_suite(void)
 	TCase *tc7 = tcase_create("Destroy Image");
 	tcase_add_test(tc7, ut_image_destroy);
 	suite_add_tcase(s, tc7);
+
+	TCase *tc8 = tcase_create("Copy image to buffer");
+	tcase_add_test(tc8, ut_copy_image_buffer);
+	suite_add_tcase(s, tc8);
 
 	return s;
 }

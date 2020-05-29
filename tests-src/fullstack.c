@@ -19,7 +19,7 @@
 #define IM_WIDTH 1920
 #define IM_HEIGHT 1080
 
-START_TEST(ut_triangle_windowless)
+START_TEST (ut_triangle_windowless)
 {
 	VK_OBJECTS;
 	helper_get_queue(NULL,
@@ -94,9 +94,9 @@ START_TEST(ut_triangle_windowless)
 		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		      &buf);
 
-	image_copy_to_buffer(device, queue, cpool,
-			     VK_IMAGE_ASPECT_COLOR_BIT, IM_WIDTH, IM_HEIGHT,
-			     image.handle, buf.handle);
+	copy_image_buffer(device, queue, cpool,
+			  VK_IMAGE_ASPECT_COLOR_BIT, IM_WIDTH, IM_HEIGHT,
+			  image.handle, buf.handle);
 
 	// View
 	const uint32_t printed_w = 80;
@@ -138,7 +138,7 @@ START_TEST(ut_triangle_windowless)
 	ck_assert(strcmp(image_string, known_string) == 0);
 
 	ck_assert(dbg_msg_ct == 0);
-}
+} END_TEST
 
 Suite *vk_fullstack_suite(void) {
 	Suite *s;

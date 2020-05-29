@@ -18,12 +18,10 @@ void read_bin(FILE *fp, size_t *buf_size, char *buf)
 	assert(*buf_size == res);
 }
 
-void create_shmod(
-	VkDevice device,
-	size_t code_size,
-	char *code,
-	VkShaderModule *shmod
-	)
+void create_shmod(VkDevice device,
+		  size_t code_size,
+		  char *code,
+		  VkShaderModule *shmod)
 {
 	VkShaderModuleCreateInfo info = {0};
 	info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -34,11 +32,9 @@ void create_shmod(
 	assert(res == VK_SUCCESS);
 }
 
-void create_shtage(
-	VkShaderModule shmod,
-	VkShaderStageFlagBits stage,
-	VkPipelineShaderStageCreateInfo *shtage
-	)
+void create_shtage(VkShaderModule shmod,
+		   VkShaderStageFlagBits stage,
+		   VkPipelineShaderStageCreateInfo *shtage)
 {
 	shtage->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shtage->pNext = NULL;
@@ -49,12 +45,10 @@ void create_shtage(
 	shtage->pSpecializationInfo = NULL;
 }
 
-void create_layout(
-	VkDevice device,
-	uint32_t desc_layout_ct,
-	VkDescriptorSetLayout *desc_layouts,
-	VkPipelineLayout *layout
-	)
+void create_layout(VkDevice device,
+		   uint32_t desc_layout_ct,
+		   VkDescriptorSetLayout *desc_layouts,
+		   VkPipelineLayout *layout)
 {
 	VkPipelineLayoutCreateInfo info = {0};
 	info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -107,18 +101,16 @@ void create_rpass(VkDevice device, VkFormat format, VkRenderPass *rpass)
 	assert(res == VK_SUCCESS);
 }
 
-void create_pipel(
-	VkDevice device,
-	uint32_t shtage_ct,
-	VkPipelineShaderStageCreateInfo *shtages,
-	VkPipelineLayout layout,
-	uint32_t binding_ct,
-	VkVertexInputBindingDescription *binding_descs,
-	uint32_t attr_ct,
-	VkVertexInputAttributeDescription *attr_descs,
-	VkRenderPass rpass,
-	VkPipeline *pipel
-	)
+void create_pipel(VkDevice device,
+		  uint32_t shtage_ct,
+		  VkPipelineShaderStageCreateInfo *shtages,
+		  VkPipelineLayout layout,
+		  uint32_t binding_ct,
+		  VkVertexInputBindingDescription *binding_descs,
+		  uint32_t attr_ct,
+		  VkVertexInputAttributeDescription *attr_descs,
+		  VkRenderPass rpass,
+		  VkPipeline *pipel)
 {
 	VkPipelineVertexInputStateCreateInfo vertex_input = {0};
 	vertex_input.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

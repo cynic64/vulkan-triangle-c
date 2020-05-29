@@ -95,12 +95,12 @@ void image_transition(VkDevice device,
 	vkFreeCommandBuffers(device, cpool, 1, &cbuf);
 }
 
-void image_copy_to_buffer(VkDevice device,
-			  VkQueue queue,
-			  VkCommandPool cpool,
-			  VkImageAspectFlags aspect,
-			  uint32_t width, uint32_t height,
-			  VkImage src, VkBuffer dest)
+void copy_image_buffer(VkDevice device,
+		       VkQueue queue,
+		       VkCommandPool cpool,
+		       VkImageAspectFlags aspect,
+		       uint32_t width, uint32_t height,
+		       VkImage src, VkBuffer dest)
 {
 	VkCommandBuffer cbuf;
 	cbuf_begin_one_time(device, cpool, &cbuf);
