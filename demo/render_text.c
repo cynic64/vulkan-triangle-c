@@ -16,19 +16,7 @@
 #define MAX_FRAMES_IN_FLIGHT 4
 
 #define IMAGE_W 1920
-#define IMAGE_H IMAGE_H
-
-/*
- * Initialize everything necessary to render to an image. All arguments are
- * outputs.
- */
-void helper_text_render_initialize(VkInstance *instance,
-				   VkDebugUtilsMessengerEXT *dbg_msgr,
-				   VkPhysicalDevice *phys_dev,
-				   uint32_t *queue_fam,
-				   VkDevice *device,
-				   VkQueue *queue,
-				   VkRenderPass *rpass);
+#define IMAGE_H 1080
 
 /*
  * End recording, submit and wait for completion of a given command buffer.
@@ -47,21 +35,38 @@ int main()
 	// Used for error checking on VK functions throughout
 	VkResult res;
 
-	VkInstance instance;
-	VkDebugUtilsMessengerEXT dbg_msgr;
-	VkPhysicalDevice phys_dev;
-	uint32_t queue_fam;
-	VkDevice device;
-	VkQueue queue;
-	VkRenderPass rpass;
-	helper_text_render_initialize(&instance,
-				      &dbg_msgr,
-				      &phys_dev,
-				      &queue_fam,
-				      &device,
-				      &queue,
-				      &rpass);
+	// Initialize GLFW
+	GLFWwindow *gwin = init_glfw();
 
+	// Create instance
+	VkInstance instance;
+	// NULL is pUserData
+	create_instance(default_debug_callback, NULL, &instance);
+
+	// Set up debug messenger (again, NULL is pUserData)
+	VkDebugUtilsMessengerEXT dbg_msgr;
+	init_debug(&instance, default_debug_callback, NULL, &dbg_msgr);
+
+	// Get physical device
+	VkPhysicalDevice phys_dev;
+	get_physical_device(instance, &phys_dev);
+
+	// Get queue family
+	uint32_t queue_fam = get_queue_fam(phys_dev);
+
+	// Create device
+	VkDevice device;
+	create_device(phys_dev, queue_fam, &device);
+
+	// Get queue
+	VkQueue queue;
+	get_queue(device, queue_fam, &queue);
+
+	// Render pass
+	VkRenderPass rpass;
+	create_rpass(device, SW_FORMAT, &rpass);
+
+	// Render target
 	VkPhysicalDeviceMemoryProperties mem_props;
 	vkGetPhysicalDeviceMemoryProperties(phys_dev, &mem_props);
 
@@ -69,7 +74,7 @@ int main()
 	image_create(device,
 		     queue_fam,
 		     mem_props,
-		     VK_FORMAT_B8G8R8A8_UNORM,
+		     VK_FORMAT_B8G8R8A8_SRGB,
 		     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
 		     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		     VK_IMAGE_ASPECT_COLOR_BIT,
@@ -118,12 +123,12 @@ int main()
 		      &vbuf);
 
 	// Copy staging to vertex
-	copy_buffer(device,
-		    queue,
-		    cpool,
-		    vertices_size,
-		    staging_buf.handle,
-		    vbuf.handle);
+	copy_buffer_buffer(device,
+			   queue,
+			   cpool,
+			   vertices_size,
+			   staging_buf.handle,
+			   vbuf.handle);
 
 	// Index buffer
 	buffer_write(staging_buf, indices_size, (void *) indices);
@@ -137,12 +142,12 @@ int main()
 		      &ibuf);
 
 	// Copy staging to index
-	copy_buffer(device,
-		    queue,
-		    cpool,
-		    indices_size,
-		    staging_buf.handle,
-		    ibuf.handle);
+	copy_buffer_buffer(device,
+			   queue,
+			   cpool,
+			   indices_size,
+			   staging_buf.handle,
+			   ibuf.handle);
 
 	// Pipeline layout
 	VkPipelineLayout layout;
@@ -214,7 +219,7 @@ int main()
 		    &cbuf);
 
         // Submit
-	submit_syncless(queue, cbuf);
+	submit_syncless(device, queue, cpool, cbuf);
 
         // Wait idle
         res = vkQueueWaitIdle(queue);
@@ -238,13 +243,13 @@ int main()
 		      &dest_buf);
 
 	// Copy it
-	image_copy_to_buffer(device,
-			     queue,
-			     cpool,
-			     VK_IMAGE_ASPECT_COLOR_BIT,
-			     IMAGE_W,
-			     IMAGE_H,
-			     image.handle, dest_buf.handle);
+	copy_image_buffer(device,
+			  queue,
+			  cpool,
+			  VK_IMAGE_ASPECT_COLOR_BIT,
+			  IMAGE_W,
+			  IMAGE_H,
+			  image.handle, dest_buf.handle);
 
 	// Print
 	// Should these be #defines? I have no idea.
@@ -260,16 +265,11 @@ int main()
 
 	printf("%s", image_string);
 
-	vkDestroyImage(device, image, NULL);
-	vkFreeMemory(device, image_mem, NULL);
-
+	image_destroy(device, image);
+	
 	buffer_destroy(dest_buf);
 
-	image_destroy(device, image);
-
 	vkDestroyFramebuffer(device, fb, NULL);
-
-        vkFreeCommandBuffers(device, cpool, 1, &cbuf);
 
 	vkDestroyPipeline(device, pipel, NULL);
 	vkDestroyPipelineLayout(device, layout, NULL);
