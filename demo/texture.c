@@ -224,48 +224,27 @@ int main() {
 	res = vkCreateSampler(device, &sampler_info, NULL, &sampler);
 	assert(res == VK_SUCCESS);
 
-	VkDescriptorSetLayoutBinding s_desc_binding;
-	create_descriptor_binding(0,
-				  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-				  VK_SHADER_STAGE_FRAGMENT_BIT,
-				  &s_desc_binding);
-
-	VkDescriptorSetLayout s_layout;
-	create_descriptor_layout(device, 1, &s_desc_binding, &s_layout);
-
+	// Set
 	VkDescriptorPool dpool;
 	create_descriptor_pool(device, 1, 1, &dpool);
+	
+	struct Set set;
+	VkDescriptorType desc_types[] =
+		{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
+	VkDescriptorBufferInfo desc_buffers[] = {NULL};
+	VkDescriptorImageInfo desc_images[] =
+		{{.sampler = sampler,
+		  .imageView = texture.view,
+		  .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL}};
+	VkShaderStageFlags desc_stages[] = {VK_SHADER_STAGE_FRAGMENT_BIT};
 
-	VkDescriptorSet set;
-
-	VkDescriptorSetAllocateInfo s_alloc_info = {0};
-	s_alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	s_alloc_info.descriptorPool = dpool;
-	s_alloc_info.descriptorSetCount = 1;
-	s_alloc_info.pSetLayouts = &s_layout;
-
-	res = vkAllocateDescriptorSets(device, &s_alloc_info, &set);
-	assert(res == VK_SUCCESS);
-
-	VkDescriptorImageInfo texture_info = {0};
-	texture_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	texture_info.imageView = texture.view;
-	texture_info.sampler = sampler;
-
-	VkWriteDescriptorSet desc_write = {0};
-	desc_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	desc_write.dstSet = set;
-	desc_write.dstBinding = 0;
-	desc_write.dstArrayElement = 0;
-	desc_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	desc_write.descriptorCount = 1;
-	desc_write.pImageInfo = &texture_info;
-
-	vkUpdateDescriptorSets(device, 1, &desc_write, 0, NULL);
-
+	set_create(device, dpool,
+		   1, desc_types, desc_buffers, desc_images, desc_stages,
+		   &set);
+		
 	// Pipeline layout
 	VkPipelineLayout layout;
-	create_layout(device, 1, &s_layout, &layout);
+	create_layout(device, 1, &set.layout, &layout);
 
 	// Shaders
 	FILE *fp;
@@ -380,7 +359,7 @@ int main() {
 			    rpass, fb,
 			    swidth, sheight,
 			    layout, pipel,
-			    1, &set,
+			    1, &set.handle,
 			    vbuf.handle, ibuf.handle, index_count,
 			    &cbuf);
 
@@ -448,15 +427,17 @@ int main() {
 		vkDestroyFence(device, render_done_fences[i], NULL);
 	}
 
+	set_destroy(device, set);
+
 	vkDestroySampler(device, sampler, NULL);
 	image_destroy(device, texture);
 
 	vkDestroyDescriptorPool(device, dpool, NULL);
-	vkDestroyDescriptorSetLayout(device, s_layout, NULL);
     
 	buffer_destroy(vbuf);
 	buffer_destroy(ibuf);
 	buffer_destroy(staging_buf);
+	buffer_destroy(texture_staging);
 
 	vkDestroyCommandPool(device, cpool, NULL);
 	vkDestroyRenderPass(device, rpass, NULL);

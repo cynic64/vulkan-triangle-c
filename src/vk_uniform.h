@@ -28,6 +28,14 @@ void set_create(VkDevice device, VkDescriptorPool dpool,
 		struct Set *set);
 
 /*
+ * Destroys a Set struct.
+ *
+ * Really only destroys the layout, the set itself should be freed by the user
+ * as part of the descriptor pool.
+ */
+void set_destroy(VkDevice device, struct Set set);
+
+/*
  * Allocates a single descriptor set from a descriptor pool.
  */
 void allocate_descriptor_set(VkDevice device,

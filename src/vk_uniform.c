@@ -38,6 +38,11 @@ void set_create(VkDevice device, VkDescriptorPool dpool,
 	}
 }
 
+void set_destroy(VkDevice device, struct Set set)
+{
+	vkDestroyDescriptorSetLayout(device, set.layout, NULL);
+}
+
 void write_descriptor_general(VkDevice device,
 			      VkDescriptorSet set, uint32_t location,
 			      VkDescriptorType type,
