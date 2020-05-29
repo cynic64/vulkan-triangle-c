@@ -336,4 +336,6 @@ void helper_create_image_with_data(VkPhysicalDevice phys_dev, VkDevice device,
 
 	copy_buffer_image(device, queue, cpool, aspect, width, height,
 			  staging.handle, image->handle);
+
+	buffer_destroy(staging);
 }

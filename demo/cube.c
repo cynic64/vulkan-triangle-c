@@ -74,88 +74,86 @@ int main()
 	// Get queue family
 	uint32_t queue_fam = get_queue_fam(phys_dev);
 
-	// create device
+	// Create device
 	VkDevice device;
 	create_device(phys_dev, queue_fam, &device);
 
-	// get queue
+	// Get queue
 	VkQueue queue;
 	get_queue(device, queue_fam, &queue);
 
-	// surface
+	// Surface
 	VkSurfaceKHR surface;
 	create_surface(instance, gwin, &surface);
 	uint32_t swidth, sheight;
 	get_dims(phys_dev, surface, &swidth, &sheight);
 
-	// render pass
+	// Render pass
 	VkRenderPass rpass;
 	create_rpass(device, SW_FORMAT, &rpass);
 
-	// window
+	// Window
 	struct Window win;
-	window_create(
-		gwin,
-		phys_dev,
-		instance,
-		device,
-		surface,
-		queue_fam,
-		queue,
-		rpass,
-		swidth,
-		sheight,
-		&win
-		);
+	window_create(gwin,
+		      phys_dev,
+		      instance,
+		      device,
+		      surface,
+		      queue_fam,
+		      queue,
+		      rpass,
+		      swidth,
+		      sheight,
+		      &win);
 
-	// command pool
+	// Command pool
 	VkCommandPool cpool;
 	create_cpool(device, queue_fam, &cpool);
 
-	// buffers
+	// Buffers
 	VkPhysicalDeviceMemoryProperties mem_props;
 	vkGetPhysicalDeviceMemoryProperties(phys_dev, &mem_props);
 
 	struct Vertex3PosColor vertices[] = {
-		// top
+		// Top
 		{ .pos = {-1.0, 1.0, -1.0}, .color = {1.0, 0.0, 0.0} },
 		{ .pos = {1.0, 1.0, -1.0}, .color = {1.0, 0.0, 0.0} },
 		{ .pos = {-1.0, 1.0, 1.0}, .color = {1.0, 0.0, 0.0} },
 		{ .pos = {1.0, 1.0, 1.0}, .color = {1.0, 0.0, 0.0} },
-		// bottom
+		// Bottom
 		{ .pos = {-1.0, -1.0, -1.0}, .color = {0.0, 1.0, 0.0} },
 		{ .pos = {1.0, -1.0, -1.0}, .color = {0.0, 1.0, 0.0} },
 		{ .pos = {-1.0, -1.0, 1.0}, .color = {0.0, 1.0, 0.0} },
 		{ .pos = {1.0, -1.0, 1.0}, .color = {0.0, 1.0, 0.0} },
-		// left
+		// Left
 		{ .pos = {-1.0, -1.0, -1.0}, .color = {0.0, 0.0, 1.0} },
 		{ .pos = {-1.0, -1.0, 1.0}, .color = {0.0, 0.0, 1.0} },
 		{ .pos = {-1.0, 1.0, -1.0}, .color = {0.0, 0.0, 1.0} },
 		{ .pos = {-1.0, 1.0, 1.0}, .color = {0.0, 0.0, 1.0} },
-		// right
+		// Right
 		{ .pos = {1.0, -1.0, -1.0}, .color = {0.0, 1.0, 1.0} },
 		{ .pos = {1.0, 1.0, -1.0}, .color = {0.0, 1.0, 1.0} },
 		{ .pos = {1.0, -1.0, 1.0}, .color = {0.0, 1.0, 1.0} },
 		{ .pos = {1.0, 1.0, 1.0}, .color = {0.0, 1.0, 1.0} },
-		// front
+		// Front
 		{ .pos = {-1.0, -1.0, -1.0}, .color = {1.0, 0.0, 1.0} },
 		{ .pos = {-1.0, 1.0, -1.0}, .color = {1.0, 0.0, 1.0} },
 		{ .pos = {1.0, -1.0, -1.0}, .color = {1.0, 0.0, 1.0} },
 		{ .pos = {1.0, 1.0, -1.0}, .color = {1.0, 0.0, 1.0} },
-		// back
+		// Back
 		{ .pos = {-1.0, -1.0, 1.0}, .color = {1.0, 1.0, 0.0} },
 		{ .pos = {1.0, -1.0, 1.0}, .color = {1.0, 1.0, 0.0} },
 		{ .pos = {-1.0, 1.0, 1.0}, .color = {1.0, 1.0, 0.0} },
 		{ .pos = {1.0, 1.0, 1.0}, .color = {1.0, 1.0, 0.0} },
 	};
-	uint32_t vertex_count = ARRAY_SIZE(verices);
+	uint32_t vertex_count = ARRAY_SIZE(vertices);
 	VkDeviceSize vertices_size = sizeof(vertices);
 
 	uint32_t indices[] = {0, 3, 1, 2, 3, 0, 4, 5, 7, 7, 6, 4, 8, 9, 11, 11, 10, 8, 12, 13, 15, 15, 14, 12, 16, 17, 19, 19, 18, 16, 20, 21, 23, 23, 22, 20};
 	uint32_t index_count = sizeof(indices) / sizeof(indices[0]);
 	VkDeviceSize indices_size = sizeof(indices);
 
-	// staging
+	// Staging
 	struct Buffer staging_buf;
 	buffer_create(device,
 		      mem_props,
@@ -164,7 +162,7 @@ int main()
 		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		      &staging_buf);
 
-	// vertex
+	// Vertex
 	buffer_write(staging_buf, vertices_size, (void *) vertices);
 
 	struct Buffer vbuf;
@@ -175,15 +173,15 @@ int main()
 		      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		      &vbuf);
 
-	// copy staging to vertex
-	copy_buffer(device,
+	// Copy staging to vertex
+	copy_buffer_buffer(device,
 		    queue,
 		    cpool,
 		    vertices_size,
 		    staging_buf.handle,
 		    vbuf.handle);
 
-	// index buffer
+	// Index buffer
 	buffer_write(staging_buf, indices_size, (void *) indices);
 
 	struct Buffer ibuf;
@@ -194,58 +192,70 @@ int main()
 		      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		      &ibuf);
 
-	// copy staging to index
-	copy_buffer(device,
+	// Copy staging to index
+	copy_buffer_buffer(device,
 		    queue,
 		    cpool,
 		    indices_size,
 		    staging_buf.handle,
 		    ibuf.handle);
 
-	// uniform data
+	// Uniform buffer
 	struct OrbitCamera cam = cam_orbit_new(0.0f, 0.0f);
 	mat4 uniform_data = {0};
 	uint32_t uniform_size = sizeof(uniform_data);
+	struct Buffer uniform_buf;
+	buffer_create(device, mem_props, uniform_size,
+		      VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+		      | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		      &uniform_buf);
 
-	// descriptor pool
-	VkDescriptorPool desc_set_pool;
-	create_descriptor_pool(device, MAX_FRAMES_IN_FLIGHT, MAX_FRAMES_IN_FLIGHT, &desc_set_pool);
+	// Descriptor pool
+	VkDescriptorPool dpool;
+	create_descriptor_pool(device, MAX_FRAMES_IN_FLIGHT, MAX_FRAMES_IN_FLIGHT, &dpool);
 
-	// synchronization primitives
-	VkSemaphore *image_avail_sems = malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
-	VkSemaphore *render_done_sems = malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
-	VkFence *render_done_fences = malloc(sizeof(VkFence) * MAX_FRAMES_IN_FLIGHT);
-	VkFence *swapchain_fences = malloc(sizeof(VkFence) * win.image_ct);
+	// Synchronization primitives
+	VkSemaphore *image_avail_sems = malloc(sizeof(image_avail_sems[0]) * MAX_FRAMES_IN_FLIGHT);
+	VkSemaphore *render_done_sems = malloc(sizeof(render_done_sems[0]) * MAX_FRAMES_IN_FLIGHT);
+	VkFence *render_done_fences = malloc(sizeof(render_done_fences[0]) * MAX_FRAMES_IN_FLIGHT);
+	VkFence *swapchain_fences = malloc(sizeof(swapchain_fences[0]) * win.image_ct);
 
-	// uniforms (also one for each frame in flight)
-	struct Uniform *uniforms = malloc(sizeof(struct Uniform) * MAX_FRAMES_IN_FLIGHT);
+	// Sets (one for each frame in flight)
+	uint32_t desc_ct = 1;
+	VkDescriptorType desc_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
+	VkDescriptorBufferInfo desc_buffers[] = {{.buffer = uniform_buf.handle,
+						  .offset = 0,
+						  .range = uniform_size}};
+	VkDescriptorImageInfo desc_images[] = {NULL};
+	VkShaderStageFlags desc_stages[] = {VK_SHADER_STAGE_VERTEX_BIT};
+	struct Set *sets = malloc(sizeof(sets[0]) * MAX_FRAMES_IN_FLIGHT);
 
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		create_sem(device, &image_avail_sems[i]);
 		create_sem(device, &render_done_sems[i]);
 		create_fence(device, VK_FENCE_CREATE_SIGNALED_BIT, &render_done_fences[i]);
 
-		uniforms[i] = uniform_create(device,
-					    desc_set_pool,
-					    mem_props,
-					    VK_SHADER_STAGE_VERTEX_BIT,
-					    uniform_size);
+		set_create(device, dpool,
+			   desc_ct, desc_types,
+			   desc_buffers, desc_images, desc_stages,
+			   &sets[i]);
 	}
 
 	for (int i = 0; i < win.image_ct; i++) {
 		swapchain_fences[i] = NULL;
 	}
 
-	// pipeline layout
+	// Pipeline layout
 	VkPipelineLayout layout;
-	create_layout(device, 1, &uniforms[0].layout, &layout);
+	create_layout(device, 1, &sets[0].layout, &layout);
 
-	// shaders
+	// Shaders
 	FILE *fp;
 	size_t vs_size, fs_size;
 	char *vs_buf, *fs_buf;
 
-	// vs
+	// Vertex shader
 	fp = fopen("assets/shaders/cube/main.vert.spv", "rb");
 	assert(fp != NULL);
 
@@ -257,7 +267,7 @@ int main()
 	VkShaderModule vs_mod;
 	create_shmod(device, vs_size, vs_buf, &vs_mod);
 
-	// fs
+	// Fragment shader
 	fp = NULL;
 	fp = fopen("assets/shaders/cube/main.frag.spv", "rb");
 	assert(fp != NULL);
@@ -270,14 +280,14 @@ int main()
 	VkShaderModule fs_mod;
 	create_shmod(device, fs_size, fs_buf, &fs_mod);
 
-	// shtages
+	// Shtages
 	VkPipelineShaderStageCreateInfo vs_stage;
 	VkPipelineShaderStageCreateInfo fs_stage;
 	create_shtage(vs_mod, VK_SHADER_STAGE_VERTEX_BIT, &vs_stage);
 	create_shtage(fs_mod, VK_SHADER_STAGE_FRAGMENT_BIT, &fs_stage);
 	VkPipelineShaderStageCreateInfo shtages[] = {vs_stage, fs_stage};
 
-	// pipeline
+	// Pipeline
 	VkPipeline pipel = NULL;
 	create_pipel(device,
 		     2,
@@ -290,53 +300,52 @@ int main()
 		     rpass,
 		     &pipel);
 
-	// cleanup shader modules
+	// Cleanup shader modules
 	vkDestroyShaderModule(device, vs_mod, NULL);
 	vkDestroyShaderModule(device, fs_mod, NULL);
 
-	// timing
+	// Timing
 	struct timespec s_time;
 	clock_gettime(CLOCK_MONOTONIC, &s_time);
 	int f_count = 0;
 
-	// loop
+	// Loop
 	while (!glfwWindowShouldClose(gwin)) {
 		glfwPollEvents();
 
-		// choose sync primitives
+		// Choose sync primitives
 		int sync_set_idx = f_count % MAX_FRAMES_IN_FLIGHT;
 		VkSemaphore image_avail_sem = image_avail_sems[sync_set_idx];
 		VkSemaphore render_done_sem = render_done_sems[sync_set_idx];
 		VkFence render_done_fence = render_done_fences[sync_set_idx];
 
-		// wait for previous frame using this sync set to complete
+		// Wait for previous frame using this sync set to complete
 		res = vkWaitForFences(device, 1, &render_done_fence, VK_TRUE, UINT64_MAX);
 		assert(res == VK_SUCCESS);
 
 		res = vkResetFences(device, 1, &render_done_fence);
 		assert(res == VK_SUCCESS);
 
-		// update uniform buffer
-		struct Uniform uniform = uniforms[sync_set_idx];
+		// Update uniform buffer
 		cam_orbit_mat(&cam, swidth, sheight, mouse_x, mouse_y, uniform_data);
-		uniform_write(uniform, uniform_data);
+		buffer_write(uniform_buf, uniform_size, uniform_data);
 
-		// acquire image
+		// Acquire image
 		uint32_t image_idx;
 		VkFramebuffer fb;
 		window_acquire(&win, image_avail_sem, &image_idx, &fb);
 
-		// wait for swapchain fence
+		// Wait for swapchain fence
 		VkFence swapchain_fence = swapchain_fences[image_idx];
 		if (swapchain_fence != NULL) {
 			res = vkWaitForFences(device, 1, &swapchain_fence, VK_TRUE, UINT64_MAX);
 			assert(res == VK_SUCCESS);
 		}
 
-		// set swapchain fence
+		// Set swapchain fence
 		swapchain_fences[image_idx] = render_done_fence;
 
-		// create command buffer
+		// Create command buffer
 		VkCommandBuffer cbuf;
 		create_cbuf(device,
 			    cpool,
@@ -347,13 +356,13 @@ int main()
 			    layout,
 			    pipel,
 			    1,
-			    &uniform.set,
+			    &sets[sync_set_idx].handle,
 			    vbuf.handle,
 			    ibuf.handle,
 			    index_count,
 			    &cbuf);
 
-		// submit
+		// Submit
 		VkSemaphore wait_sems[] = {image_avail_sem};
 		VkSemaphore signal_sems[] = {render_done_sem};
 		VkPipelineStageFlags wait_stages[] =
@@ -372,7 +381,7 @@ int main()
 		res = vkQueueSubmit(queue, 1, &submit_info, render_done_fence);
 		assert(res == VK_SUCCESS);
 
-		// present
+		// Present
 		VkPresentInfoKHR present_info = {0};
 		present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		present_info.waitSemaphoreCount = 1;
@@ -383,7 +392,7 @@ int main()
 
 		res = vkQueuePresentKHR(queue, &present_info);
 
-		// maybe recreate
+		// Maybe recreate
 		if (res == VK_ERROR_OUT_OF_DATE_KHR) {
 			get_dims(phys_dev, surface, &swidth, &sheight);
 			window_recreate_swapchain(&win, swidth, sheight);
@@ -391,17 +400,17 @@ int main()
 			assert(res == VK_SUCCESS);
 		}
 
-		// wait idle
+		// Wait idle
 		res = vkQueueWaitIdle(queue);
 		assert(res == VK_SUCCESS);
 
-		// free command buffer
+		// Free command buffer
 		vkFreeCommandBuffers(device, cpool, 1, &cbuf);
 
 		f_count++;
 	}
 
-	// calculate delta / FPS
+	// Calculate delta / FPS
 	double elapsed = get_elapsed(&s_time);
 	printf("%d frames in %.4f secs --> %.4f FPS\n", f_count, elapsed, (double) f_count / elapsed);
 	printf("Avg. delta: %.4f ms\n", elapsed / (double) f_count * 1000.0f);
@@ -411,15 +420,17 @@ int main()
 	vkDestroyPipeline(device, pipel, NULL);
 	vkDestroyPipelineLayout(device, layout, NULL);
 
+	buffer_destroy(uniform_buf);
+
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		vkDestroySemaphore(device, image_avail_sems[i], NULL);
 		vkDestroySemaphore(device, render_done_sems[i], NULL);
 		vkDestroyFence(device, render_done_fences[i], NULL);
 
-		uniform_destroy(uniforms[i]);
+		set_destroy(device, sets[i]);
 	}
 
-	vkDestroyDescriptorPool(device, desc_set_pool, NULL);
+	vkDestroyDescriptorPool(device, dpool, NULL);
 
 	buffer_destroy(vbuf);
 	buffer_destroy(ibuf);

@@ -197,7 +197,7 @@ START_TEST(ut_set_create)
 {
 	VK_OBJECTS;
 	helper_get_queue(&gwin,
-			 &dbg_msg_ct, NULL,
+			 &dbg_msg_ct, &dbg_msgr,
 			 &instance, &phys_dev, &queue_fam, &device, &queue);
 
 	VkCommandPool cpool;
@@ -228,7 +228,7 @@ START_TEST(ut_set_create)
 	// Create buffers
 	struct Buffer bufs[2];
 
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < ARRAY_SIZE(bufs); i++) {
 		helper_create_buffer_with_data(phys_dev, device,
 					       buf_data_size, &buf_data[i], &bufs[i]);
 	}
@@ -236,7 +236,7 @@ START_TEST(ut_set_create)
 	// Create images
 	struct Image imgs[2];
 
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < ARRAY_SIZE(imgs); i++) {
 		helper_create_image_with_data(phys_dev, device,
 					      queue_fam, queue, cpool,
 					      DEFAULT_FMT,

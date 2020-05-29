@@ -51,8 +51,7 @@ void image_transition(VkDevice device, VkQueue queue,
  * - Be big enough
  * - Have usage TRANSFER_DST
  */
-void copy_image_buffer(VkDevice device,
-		       VkQueue queue,
+void copy_image_buffer(VkDevice device, VkQueue queue,
 		       VkCommandPool cpool,
 		       VkImageAspectFlags aspect,
 		       uint32_t width, uint32_t height,
