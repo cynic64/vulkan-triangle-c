@@ -309,8 +309,19 @@ int main()
 	clock_gettime(CLOCK_MONOTONIC, &s_time);
 	int f_count = 0;
 
+	// Swapchain
+	int must_recreate_swapchain = 0;
+
 	// Loop
 	while (!glfwWindowShouldClose(gwin)) {
+		// Maybe recreate
+		if (must_recreate_swapchain) {
+			get_dims(phys_dev, surface, &swidth, &sheight);
+			window_recreate_swapchain(&win, swidth, sheight);
+
+			must_recreate_swapchain = 0;
+		}
+		
 		glfwPollEvents();
 
 		// Choose sync primitives
@@ -323,9 +334,6 @@ int main()
 		res = vkWaitForFences(device, 1, &render_done_fence, VK_TRUE, UINT64_MAX);
 		assert(res == VK_SUCCESS);
 
-		res = vkResetFences(device, 1, &render_done_fence);
-		assert(res == VK_SUCCESS);
-
 		// Update uniform buffer
 		cam_orbit_mat(&cam, swidth, sheight, mouse_x, mouse_y, uniform_data);
 		buffer_write(uniform_buf, uniform_size, uniform_data);
@@ -333,7 +341,12 @@ int main()
 		// Acquire image
 		uint32_t image_idx;
 		VkFramebuffer fb;
-		window_acquire(&win, image_avail_sem, &image_idx, &fb);
+		int ac_res = window_acquire(&win, image_avail_sem, &image_idx, &fb);
+
+		if (ac_res != 0) {
+			must_recreate_swapchain = 1;
+			continue;
+		}
 
 		// Wait for swapchain fence
 		VkFence swapchain_fence = swapchain_fences[image_idx];
@@ -341,6 +354,9 @@ int main()
 			res = vkWaitForFences(device, 1, &swapchain_fence, VK_TRUE, UINT64_MAX);
 			assert(res == VK_SUCCESS);
 		}
+
+		res = vkResetFences(device, 1, &render_done_fence);
+		assert(res == VK_SUCCESS);
 
 		// Set swapchain fence
 		swapchain_fences[image_idx] = render_done_fence;
@@ -392,10 +408,8 @@ int main()
 
 		res = vkQueuePresentKHR(queue, &present_info);
 
-		// Maybe recreate
 		if (res == VK_ERROR_OUT_OF_DATE_KHR) {
-			get_dims(phys_dev, surface, &swidth, &sheight);
-			window_recreate_swapchain(&win, swidth, sheight);
+			must_recreate_swapchain = 1;
 		} else {
 			assert(res == VK_SUCCESS);
 		}

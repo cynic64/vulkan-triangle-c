@@ -56,15 +56,18 @@ void window_recreate_swapchain(struct Window *win,
 /*
  * Acquire a swapchain image.
  *
+ * Returns 0 on success, 1 if the swapchain is out of date, and aborts
+ * otherwise.
+ *
  * win: Pointer to an existing Window struct (will be modified)
  * sem: Semaphore to signal on image acquisition
  * image_idx: Will store the acquired image index
  * fb: Will store the acquired image's framebuffer
  */
-void window_acquire(struct Window *win,
-		    VkSemaphore sem,
-		    uint32_t *image_idx,
-		    VkFramebuffer *fb);
+int window_acquire(struct Window *win,
+		   VkSemaphore sem,
+		   uint32_t *image_idx,
+		   VkFramebuffer *fb);
 
 /*
  * Destroys a Window struct and created resources(swapchain, image views,

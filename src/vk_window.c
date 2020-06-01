@@ -120,10 +120,10 @@ void window_recreate_swapchain(struct Window *win,
 	}
 }
 
-void window_acquire(struct Window *win,
-		    VkSemaphore sem,
-		    uint32_t *image_idx,
-		    VkFramebuffer *fb)
+int window_acquire(struct Window *win,
+		   VkSemaphore sem,
+		   uint32_t *image_idx,
+		   VkFramebuffer *fb)
 {
 	VkResult res = vkAcquireNextImageKHR(win->device,
 					     win->swapchain,
@@ -131,9 +131,16 @@ void window_acquire(struct Window *win,
 					     sem,
 					     NULL,
 					     image_idx);
-	assert(res == VK_SUCCESS);
+	
+	if (res == VK_ERROR_OUT_OF_DATE_KHR) {
+		return 1;
+	} else {
+		assert(res == VK_SUCCESS);
+	}
 
 	*fb = win->fbs[*image_idx];
+
+	return 0;
 }
 
 void window_cleanup(struct Window *win)
