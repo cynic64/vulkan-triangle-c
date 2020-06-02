@@ -197,19 +197,32 @@ int main() {
 	vkDestroyShaderModule(device, fs_mod, NULL);
 
 	// Synchronization primitives
-	VkSemaphore *image_avail_sems = malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
-	VkSemaphore *render_done_sems = malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
-	VkFence *render_done_fences = malloc(sizeof(VkFence) * MAX_FRAMES_IN_FLIGHT);
-	VkFence *swapchain_fences = malloc(sizeof(VkFence) * win.image_ct);
+	VkSemaphore *image_avail_sems = malloc(sizeof(image_avail_sems[0])
+					       * MAX_FRAMES_IN_FLIGHT);
+	VkSemaphore *render_done_sems = malloc(sizeof(render_done_sems[0])
+					       * MAX_FRAMES_IN_FLIGHT);
+	VkFence *render_done_fences = malloc(sizeof(render_done_fences[0])
+					     * MAX_FRAMES_IN_FLIGHT);
+	VkFence *swapchain_fences = malloc(sizeof(swapchain_fences[0])
+					   * win.image_ct);
 
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		create_sem(device, &image_avail_sems[i]);
 		create_sem(device, &render_done_sems[i]);
-		create_fence(device, VK_FENCE_CREATE_SIGNALED_BIT, &render_done_fences[i]);
+		create_fence(device, VK_FENCE_CREATE_SIGNALED_BIT,
+			     &render_done_fences[i]);
 	}
 
 	for (int i = 0; i < win.image_ct; i++) {
 		swapchain_fences[i] = NULL;
+	}
+
+	// Command buffers (one for every frame in flight)
+	VkCommandBuffer *cbufs = malloc(sizeof(cbufs[0])
+					* MAX_FRAMES_IN_FLIGHT);
+
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		cbufs[i] = NULL;
 	}
 
 	// Timing
@@ -242,6 +255,12 @@ int main() {
 		res = vkWaitForFences(device, 1, &render_done_fence, VK_TRUE, UINT64_MAX);
 		assert(res == VK_SUCCESS);
 
+		// Free previously used command buffer
+		VkCommandBuffer cbuf = cbufs[sync_set_idx];
+		if (cbuf != NULL) {
+			vkFreeCommandBuffers(device, cpool, 1, &cbuf);
+		}
+
 		// Acquire image
 		uint32_t image_idx;
 		VkFramebuffer fb;
@@ -266,7 +285,6 @@ int main() {
 		swapchain_fences[image_idx] = render_done_fence;
 
 		// Create command buffer
-		VkCommandBuffer cbuf;
 		create_cbuf(device,
 			    cpool,
 			    rpass,
@@ -315,20 +333,20 @@ int main() {
 			assert(res == VK_SUCCESS);
 		}
 
-		// Wait idle
-		res = vkQueueWaitIdle(queue);
-		assert(res == VK_SUCCESS);
-
-		// Free command buffer
-		vkFreeCommandBuffers(device, cpool, 1, &cbuf);
+		cbufs[sync_set_idx] = cbuf;
 
 		f_count++;
 	}
+
+	res = vkQueueWaitIdle(queue);
+	assert(res == VK_SUCCESS);
 
 	// Calculate delta / FPS
 	double elapsed = get_elapsed(&s_time);
 	printf("%d frames in %.4f secs --> %.4f FPS\n", f_count, elapsed, (double) f_count / elapsed);
 	printf("Avg. delta: %.4f ms\n", elapsed / (double) f_count * 1000.0f);
+
+	vkDestroyCommandPool(device, cpool, NULL);
 
 	window_cleanup(&win);
 
@@ -345,7 +363,6 @@ int main() {
 	buffer_destroy(ibuf);
 	buffer_destroy(staging_buf);
 
-	vkDestroyCommandPool(device, cpool, NULL);
 	vkDestroyRenderPass(device, rpass, NULL);
 
 	vkDestroySurfaceKHR(instance, surface, NULL);

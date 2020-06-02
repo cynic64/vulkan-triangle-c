@@ -304,6 +304,14 @@ int main()
 	vkDestroyShaderModule(device, vs_mod, NULL);
 	vkDestroyShaderModule(device, fs_mod, NULL);
 
+	// Command buffers (one for every frame in flight)
+	VkCommandBuffer *cbufs = malloc(sizeof(cbufs[0])
+					* MAX_FRAMES_IN_FLIGHT);
+
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		cbufs[i] = NULL;
+	}
+
 	// Timing
 	struct timespec s_time;
 	clock_gettime(CLOCK_MONOTONIC, &s_time);
@@ -334,6 +342,12 @@ int main()
 		res = vkWaitForFences(device, 1, &render_done_fence, VK_TRUE, UINT64_MAX);
 		assert(res == VK_SUCCESS);
 
+		// Free previously used command buffer
+		VkCommandBuffer cbuf = cbufs[sync_set_idx];
+		if (cbuf != NULL) {
+			vkFreeCommandBuffers(device, cpool, 1, &cbuf);
+		}
+
 		// Update uniform buffer
 		cam_orbit_mat(&cam, swidth, sheight, mouse_x, mouse_y, uniform_data);
 		buffer_write(uniform_buf, uniform_size, uniform_data);
@@ -362,7 +376,6 @@ int main()
 		swapchain_fences[image_idx] = render_done_fence;
 
 		// Create command buffer
-		VkCommandBuffer cbuf;
 		create_cbuf(device,
 			    cpool,
 			    rpass,
@@ -414,13 +427,6 @@ int main()
 			assert(res == VK_SUCCESS);
 		}
 
-		// Wait idle
-		res = vkQueueWaitIdle(queue);
-		assert(res == VK_SUCCESS);
-
-		// Free command buffer
-		vkFreeCommandBuffers(device, cpool, 1, &cbuf);
-
 		f_count++;
 	}
 
@@ -428,6 +434,11 @@ int main()
 	double elapsed = get_elapsed(&s_time);
 	printf("%d frames in %.4f secs --> %.4f FPS\n", f_count, elapsed, (double) f_count / elapsed);
 	printf("Avg. delta: %.4f ms\n", elapsed / (double) f_count * 1000.0f);
+
+	res = vkQueueWaitIdle(queue);
+	assert(res == VK_SUCCESS);
+
+	vkDestroyCommandPool(device, cpool, NULL);
 
 	window_cleanup(&win);
 
@@ -450,7 +461,6 @@ int main()
 	buffer_destroy(ibuf);
 	buffer_destroy(staging_buf);
 
-	vkDestroyCommandPool(device, cpool, NULL);
 	vkDestroyRenderPass(device, rpass, NULL);
 
 	vkDestroySurfaceKHR(instance, surface, NULL);
