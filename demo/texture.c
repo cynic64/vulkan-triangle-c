@@ -76,7 +76,7 @@ int main() {
 		      surface,
 		      queue_fam,
 		      queue,
-		      rpass,
+		      rpass, 0, NULL,
 		      swidth, sheight,
 		      &win);
 
@@ -293,7 +293,7 @@ int main() {
 		     VERTEX_2_POS_TEX_BINDINGS,
 		     VERTEX_2_POS_TEX_ATTRIBUTE_CT,
 		     VERTEX_2_POS_TEX_ATTRIBUTES,
-		     rpass,
+		     rpass, 0,
 		     &pipel);
 
 	// Cleanup shader modules
@@ -324,6 +324,10 @@ int main() {
 		cbufs[i] = NULL;
 	}
 
+	// Clear values
+	VkClearValue clears[] = {{0.0f, 0.0f, 0.0f, 0.0f}};
+	uint32_t clear_ct = ARRAY_SIZE(clears);
+
 	// Timing
 	struct timespec s_time;
 	clock_gettime(CLOCK_MONOTONIC, &s_time);
@@ -337,7 +341,8 @@ int main() {
 		// Maybe recreate
 		if (must_recreate_swapchain) {
 			get_dims(phys_dev, surface, &swidth, &sheight);
-			window_recreate_swapchain(&win, swidth, sheight);
+			window_recreate_swapchain(&win,
+						  0, NULL, swidth, sheight);
 
 			must_recreate_swapchain = 0;
 		}
@@ -354,12 +359,6 @@ int main() {
 		res = vkWaitForFences(device, 1, &render_done_fence, VK_TRUE, UINT64_MAX);
 		assert(res == VK_SUCCESS);
 
-		// Free previously used command buffer
-		VkCommandBuffer cbuf = cbufs[sync_set_idx];
-		if (cbuf != NULL) {
-			vkFreeCommandBuffers(device, cpool, 1, &cbuf);
-		}
-
 		// Acquire image
 		uint32_t image_idx;
 		VkFramebuffer fb;
@@ -368,6 +367,12 @@ int main() {
 		if (ac_res != 0) {
 			must_recreate_swapchain = 1;
 			continue;
+		}
+
+		// Free previously used command buffer
+		VkCommandBuffer cbuf = cbufs[sync_set_idx];
+		if (cbuf != NULL) {
+			vkFreeCommandBuffers(device, cpool, 1, &cbuf);
 		}
 
 		// Wait for swapchain fence
@@ -385,12 +390,15 @@ int main() {
 
 		// Create command buffer
 		create_cbuf(device, cpool,
-			    rpass, fb,
+			    rpass, clear_ct, clears,
+			    fb,
 			    swidth, sheight,
 			    layout, pipel,
 			    1, &set.handle,
 			    vbuf.handle, ibuf.handle, index_count,
 			    &cbuf);
+
+		cbufs[sync_set_idx] = cbuf;
 
 		// Submit
 		VkSemaphore wait_sems[] = {image_avail_sem};

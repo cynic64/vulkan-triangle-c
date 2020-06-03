@@ -83,7 +83,9 @@ int main()
 	
 	// Create framebuffer
 	VkFramebuffer fb;
-	create_framebuffer(device, IMAGE_W, IMAGE_H, rpass, image.view, &fb);
+	create_framebuffer(device,
+			   IMAGE_W, IMAGE_H, rpass, 1, &image.view,
+			   &fb);
 
 	// Command pool
 	VkCommandPool cpool;
@@ -197,18 +199,21 @@ int main()
 		     layout,
 		     VERTEX_2_POS_COLOR_BINDING_CT, VERTEX_2_POS_COLOR_BINDINGS,
 		     VERTEX_2_POS_COLOR_ATTRIBUTE_CT, VERTEX_2_POS_COLOR_ATTRIBUTES,
-		     rpass,
+		     rpass, 0,
 		     &pipel);
 
 	// Cleanup shader modules
 	vkDestroyShaderModule(device, vs_mod, NULL);
 	vkDestroyShaderModule(device, fs_mod, NULL);
 
+	// Clear values
+	VkClearValue clears[] = {{0.0f, 0.0f, 0.0f, 0.0f}};
+	uint32_t clear_ct = ARRAY_SIZE(clears);
+
         // Create command buffer
         VkCommandBuffer cbuf;
-        create_cbuf(device,
-		    cpool,
-		    rpass,
+        create_cbuf(device, cpool,
+		    rpass, clear_ct, clears,
 		    fb,
 		    IMAGE_W, IMAGE_H,
 		    layout,

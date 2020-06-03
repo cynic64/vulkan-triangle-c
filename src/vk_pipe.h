@@ -19,6 +19,11 @@ void create_layout(VkDevice device,
 
 void create_rpass(VkDevice device, VkFormat format, VkRenderPass *rpass);
 
+/*
+ * Creates a graphics pipeline.
+ *
+ * has_pipe: Whether a depth stencil attachment will be used (1 = true)
+ */
 void create_pipel(VkDevice device,
 		  uint32_t shtage_ct,
 		  VkPipelineShaderStageCreateInfo *shtages,
@@ -27,7 +32,7 @@ void create_pipel(VkDevice device,
 		  VkVertexInputBindingDescription *binding_descs,
 		  uint32_t attr_ct,
 		  VkVertexInputAttributeDescription *attr_descs,
-		  VkRenderPass rpass,
+		  VkRenderPass rpass, int has_pipe,
 		  VkPipeline *pipel);
 
 void create_shtage(VkShaderModule shmod,

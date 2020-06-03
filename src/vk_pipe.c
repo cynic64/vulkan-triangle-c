@@ -109,7 +109,7 @@ void create_pipel(VkDevice device,
 		  VkVertexInputBindingDescription *binding_descs,
 		  uint32_t attr_ct,
 		  VkVertexInputAttributeDescription *attr_descs,
-		  VkRenderPass rpass,
+		  VkRenderPass rpass, int has_depth,
 		  VkPipeline *pipel)
 {
 	VkPipelineVertexInputStateCreateInfo vertex_input = {0};
@@ -178,15 +178,22 @@ void create_pipel(VkDevice device,
 	viewport_state.scissorCount = 1;
 	viewport_state.pScissors = &scissor;
 
-	VkDynamicState dyn_states[] = {
-		VK_DYNAMIC_STATE_VIEWPORT,
-		VK_DYNAMIC_STATE_SCISSOR
-	};
+	VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT,
+				       VK_DYNAMIC_STATE_SCISSOR};
 
 	VkPipelineDynamicStateCreateInfo dyn_state = {0};
 	dyn_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 	dyn_state.dynamicStateCount = 2;
 	dyn_state.pDynamicStates = dyn_states;
+
+	VkPipelineDepthStencilStateCreateInfo depth_state = {0};
+	depth_state.sType =
+		VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	depth_state.depthTestEnable = VK_TRUE;
+	depth_state.depthWriteEnable = VK_TRUE;
+	depth_state.depthCompareOp = VK_COMPARE_OP_LESS;
+	depth_state.depthBoundsTestEnable = VK_FALSE;
+	depth_state.stencilTestEnable = VK_FALSE;
 
 	VkGraphicsPipelineCreateInfo info = {0};
 	info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -197,20 +204,18 @@ void create_pipel(VkDevice device,
 	info.pViewportState = &viewport_state;
 	info.pRasterizationState = &rasterizer;
 	info.pMultisampleState = &multisampling;
-	info.pDepthStencilState = NULL;
+	info.pDepthStencilState = has_depth? &depth_state : NULL;
 	info.pColorBlendState = &blend;
 	info.pDynamicState = &dyn_state;
 	info.layout = layout;
 	info.renderPass = rpass;
 	info.subpass = 0;
 
-	VkResult res = vkCreateGraphicsPipelines(
-		device,
-		VK_NULL_HANDLE,
-		1,
-		&info,
-		NULL,
-		pipel
-		);
+	VkResult res = vkCreateGraphicsPipelines(device,
+						 VK_NULL_HANDLE,
+						 1,
+						 &info,
+						 NULL,
+						 pipel);
 	assert(res == VK_SUCCESS);
 }

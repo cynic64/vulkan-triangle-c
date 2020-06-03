@@ -13,6 +13,7 @@ void window_create(GLFWwindow *gwin,
 		   uint32_t queue_fam,
 		   VkQueue queue,
 		   VkRenderPass rpass,
+		   uint32_t extra_view_ct, VkImageView *extra_views,
 		   uint32_t swidth, uint32_t sheight,
 		   struct Window *win)
 {
@@ -36,13 +37,21 @@ void window_create(GLFWwindow *gwin,
 	create_swapchain_image_views(device, swapchain, &image_ct, views);
 
 	// Framebuffers
+	uint32_t all_view_ct = 1 + extra_view_ct;
+
 	VkFramebuffer *fbs = malloc(sizeof(VkFramebuffer) * image_ct);
 	for (int i = 0; i < image_ct; i++) {
+		VkImageView *all_views =
+			concat_image_views(1, &views[i],
+					   extra_view_ct, extra_views);
+		
 		create_framebuffer(device,
 				   swidth, sheight,
 				   rpass,
-				   views[i],
+				   all_view_ct, all_views,
 				   &fbs[i]);
+
+		free(all_views);
 	}
 
 	// Assign
@@ -62,6 +71,7 @@ void window_create(GLFWwindow *gwin,
 }
 
 void window_recreate_swapchain(struct Window *win,
+			       uint32_t extra_view_ct, VkImageView *extra_views,
 			       uint32_t swidth, uint32_t sheight)
 {
 	vkDeviceWaitIdle(win->device);
@@ -108,15 +118,22 @@ void window_recreate_swapchain(struct Window *win,
 	free(win->fbs);
 
 	// Create new framebuffers
+	uint32_t all_view_ct = 1 + extra_view_ct;
+	
 	win->fbs = malloc(sizeof(VkFramebuffer) * win->image_ct);
 
 	for (int i = 0; i < win->image_ct; i++) {
+		VkImageView *all_views
+			= concat_image_views(1, &win->views[i],
+					     extra_view_ct, extra_views);
+
 		create_framebuffer(win->device,
 				   swidth,
 				   sheight,
 				   win->rpass,
-				   win->views[i],
+				   all_view_ct, all_views,
 				   &win->fbs[i]);
+		free(all_views);
 	}
 }
 
@@ -241,16 +258,16 @@ void create_swapchain_image_views(VkDevice device,
 }
 
 void create_framebuffer(VkDevice device,
-			uint32_t width,	uint32_t height,
+			uint32_t width, uint32_t height,
 			VkRenderPass rpass,
-			VkImageView image_view,
+			uint32_t view_ct, VkImageView *views,
 			VkFramebuffer *fb)
 {
 	VkFramebufferCreateInfo info = {0};
 	info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 	info.renderPass = rpass;
-	info.attachmentCount = 1;
-	info.pAttachments = &image_view;
+	info.attachmentCount = view_ct;
+	info.pAttachments = views;
 	info.width = width;
 	info.height = height;
 	info.layers = 1;
@@ -272,3 +289,26 @@ void get_dims(VkPhysicalDevice phys_dev,
 	*width = caps.currentExtent.width;
 	*height = caps.currentExtent.height;
 }
+
+VkImageView *concat_image_views(uint32_t a_ct, VkImageView *a_views,
+				uint32_t b_ct, VkImageView *b_views)
+{
+	uint32_t total_ct = a_ct + b_ct;
+	VkImageView *out = malloc(sizeof(out[0]) * total_ct);
+
+	for (int i = 0; i < a_ct; i++) {
+		out[i] = a_views[i];
+	}
+
+	for (int i = 0; i < b_ct; i++) {
+		out[i + a_ct] = b_views[i];
+	}
+
+	return out;
+}
+
+
+
+
+
+

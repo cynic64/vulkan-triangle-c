@@ -16,6 +16,7 @@ void create_cpool(VkDevice device, uint32_t queue_fam, VkCommandPool *cpool)
 void create_cbuf(VkDevice device,
 		 VkCommandPool cpool,
 		 VkRenderPass rpass,
+		 uint32_t clear_ct, VkClearValue *clears,
 		 VkFramebuffer fb,
 		 uint32_t width, uint32_t height,
 		 VkPipelineLayout layout,
@@ -31,8 +32,6 @@ void create_cbuf(VkDevice device,
 	cbuf_begin_one_time(device, cpool, cbuf);
 
 	// Enter render pass
-	VkClearValue clear = {0.0f, 0.0f, 0.0f, 0.0f};
-
 	VkOffset2D render_area_offset = {0};
 	render_area_offset.x = 0;
 	render_area_offset.y = 0;
@@ -46,8 +45,8 @@ void create_cbuf(VkDevice device,
 	rpass_info.framebuffer = fb;
 	rpass_info.renderArea.offset = render_area_offset;
 	rpass_info.renderArea.extent = render_area_extent;
-	rpass_info.clearValueCount = 1;
-	rpass_info.pClearValues = &clear;
+	rpass_info.clearValueCount = clear_ct;
+	rpass_info.pClearValues = clears;
 
 	vkCmdBeginRenderPass(*cbuf, &rpass_info, VK_SUBPASS_CONTENTS_INLINE);
 

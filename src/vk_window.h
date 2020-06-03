@@ -34,6 +34,9 @@ struct Window {
  *
  * Creates a swapchain, swapchain image views, and framebuffers (which are
  * stored in the Window struct).
+ *
+ * extra_views: Image views to include in the framebuffer in addition to the
+ * swapchain's. Can be NULL if extra_view_ct is 0.
  */
 void window_create(GLFWwindow *gwin,
 		   VkPhysicalDevice phys_dev,
@@ -43,14 +46,19 @@ void window_create(GLFWwindow *gwin,
 		   uint32_t queue_fam,
 		   VkQueue queue,
 		   VkRenderPass rpass,
+		   uint32_t extra_view_ct, VkImageView *extra_views,
 		   uint32_t swidth, uint32_t sheight,
 		   struct Window *win);
 
 /*
  * Recreates the swapchain stored in the Window struct, using swidth and sheight
- * as the new dimensions
+ * as the new dimensions.
+ *
+ * extra_views: Image views to include in the framebuffer in addition to the
+ * swapchain's. Can be NULL if extra_view_ct is 0.
  */
 void window_recreate_swapchain(struct Window *win,
+			       uint32_t extra_view_ct, VkImageView *extra_views,
 			       uint32_t swidth, uint32_t sheight);
 
 /*
@@ -110,12 +118,12 @@ void create_swapchain_image_views(VkDevice device,
 				  VkImageView *image_views);
 
 /*
- * Create a framebuffer given a render pass and image view.
+ * Create a framebuffer given a render pass and image views.
  */
 void create_framebuffer(VkDevice device,
 			uint32_t width, uint32_t height,
 			VkRenderPass rpass,
-			VkImageView image_view,
+			uint32_t view_ct, VkImageView *views,
 			VkFramebuffer *fb);
 
 /*
@@ -124,5 +132,12 @@ void create_framebuffer(VkDevice device,
 void get_dims(VkPhysicalDevice phys_dev,
 	      VkSurfaceKHR surface,
 	      uint32_t *width, uint32_t *height);
+
+/*
+ * Concatenate two VkImageView * structs. Allocates its own memory and returns
+ * it.
+ */
+VkImageView *concat_image_views(uint32_t a_ct, VkImageView *a_views,
+				uint32_t b_ct, VkImageView *b_views);
 
 #endif // VK_WINDOW_H_
