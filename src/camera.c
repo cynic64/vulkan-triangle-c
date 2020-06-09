@@ -18,7 +18,7 @@ void cam_projector(uint32_t swidth, uint32_t sheight, mat4 dest)
 {
 	float aspect = (float) swidth / (float) sheight;
 	float fov = M_PI * 0.25;
-	glm_perspective(fov, aspect, 1.0f, 10.0f, dest);
+	glm_perspective(fov, aspect, 1.0f, 100.0f, dest);
 
 	// Flip vertically (GLM and Vulkan don't match up in this regard)
 	glm_scale(dest, (vec3){1.0, -1.0f, 1.0f});
@@ -54,7 +54,7 @@ void cam_orbit_mat(struct OrbitCamera *c,
 		   double x, double y,
 		   mat4 dest)
 {
-	float distance = 4.0;
+	float distance = 16.0f;
 
 	// Update pitch and yaw
 	double x_diff, y_diff;

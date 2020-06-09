@@ -8,6 +8,7 @@
 #include "../src/vk_vertex.h"
 #include "../src/vk_uniform.h"
 #include "../src/vk_image.h"
+#include "../src/vk_rpass.h"
 #include "../src/camera.h"
 #include "../src/obj.h"
 
@@ -79,69 +80,13 @@ int main() {
 
 	// Render pass
 	VkRenderPass rpass;
-	VkAttachmentDescription color_attachment = {0};
-	color_attachment.format = VK_FORMAT_B8G8R8A8_SRGB;
-	color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-	VkAttachmentDescription depth_attachment = {0};
-	depth_attachment.format = DEPTH_FMT;
-	depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	depth_attachment.finalLayout =
-		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentDescription attachments[] = {color_attachment,
-						 depth_attachment};
-
-	VkAttachmentReference color_attach_ref = {0};
-	color_attach_ref.attachment = 0;
-	color_attach_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentReference depth_attach_ref = {0};
-	depth_attach_ref.attachment = 1;
-	depth_attach_ref.layout =
-		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	VkSubpassDescription subpass = {0};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &color_attach_ref;
-	subpass.pDepthStencilAttachment = &depth_attach_ref;
-
-	VkSubpassDependency subpass_dep = {0};
-	subpass_dep.srcSubpass = VK_SUBPASS_EXTERNAL;
-	subpass_dep.dstSubpass = 0;
-	subpass_dep.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	subpass_dep.srcAccessMask = 0;
-	subpass_dep.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	subpass_dep.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-	VkRenderPassCreateInfo rpass_info = {0};
-	rpass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	rpass_info.attachmentCount = ARRAY_SIZE(attachments);
-	rpass_info.pAttachments = attachments;
-	rpass_info.subpassCount = 1;
-	rpass_info.pSubpasses = &subpass;
-	rpass_info.dependencyCount = 1;
-	rpass_info.pDependencies = &subpass_dep;
-
-	res = vkCreateRenderPass(device, &rpass_info, NULL, &rpass);
-	assert(res == VK_SUCCESS);
+	rpass_with_depth(device, VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_D32_SFLOAT,
+			 &rpass);
 
 	// Depth buffer
 	struct Image depth_image;
 	image_create(device, queue_fam, mem_props,
-		     VK_FORMAT_D32_SFLOAT,
+		     DEPTH_FMT,
 		     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 		     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		     VK_IMAGE_ASPECT_DEPTH_BIT,
@@ -491,6 +436,8 @@ int main() {
 	res = vkQueueWaitIdle(queue);
 	assert(res == VK_SUCCESS);
 
+	image_destroy(device, depth_image);
+	
 	vkDestroyCommandPool(device, cpool, NULL);
 	window_cleanup(&win);
 

@@ -7,6 +7,7 @@
 #include "../src/vk_vertex.h"
 #include "../src/vk_window.h"
 #include "../src/vk_image.h"
+#include "../src/vk_rpass.h"
 
 #include <stdlib.h>
 #include <assert.h>
@@ -64,7 +65,7 @@ int main()
 
 	// Render pass
 	VkRenderPass rpass;
-	create_rpass(device, SW_FORMAT, &rpass);
+	rpass_basic(device, SW_FORMAT, &rpass);
 
 	// Render target
 	VkPhysicalDeviceMemoryProperties mem_props;

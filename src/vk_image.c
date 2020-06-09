@@ -283,6 +283,5 @@ uint32_t find_memory_type(VkPhysicalDeviceMemoryProperties dev_props,
 
 	assert(found == 1);
 
-	return 0;
 	return type_idx;
 }

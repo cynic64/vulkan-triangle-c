@@ -6,6 +6,7 @@
 #include "../src/vk_sync.h"
 #include "../src/vk_buffer.h"
 #include "../src/vk_vertex.h"
+#include "../src/vk_rpass.h"
 
 #include <stdlib.h>
 #include <assert.h>
@@ -56,7 +57,7 @@ int main() {
 
 	// Render pass
 	VkRenderPass rpass;
-	create_rpass(device, SW_FORMAT, &rpass);
+	rpass_basic(device, SW_FORMAT, &rpass);
 
 	// Window
 	struct Window win;

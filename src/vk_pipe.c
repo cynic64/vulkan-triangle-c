@@ -59,48 +59,6 @@ void create_layout(VkDevice device,
 	assert(res == VK_SUCCESS);
 }
 
-void create_rpass(VkDevice device, VkFormat format, VkRenderPass *rpass)
-{
-	VkAttachmentDescription color_attachment = {0};
-	color_attachment.format = format;
-	color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-	VkAttachmentReference color_attach_ref = {0};
-	color_attach_ref.attachment = 0;
-	color_attach_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	VkSubpassDescription subpass = {0};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &color_attach_ref;
-
-	VkSubpassDependency dep = {0};
-	dep.srcSubpass = VK_SUBPASS_EXTERNAL;
-	dep.dstSubpass = 0;
-	dep.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dep.srcAccessMask = 0;
-	dep.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dep.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-	VkRenderPassCreateInfo info = {0};
-	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	info.attachmentCount = 1;
-	info.pAttachments = &color_attachment;
-	info.subpassCount = 1;
-	info.pSubpasses = &subpass;
-	info.dependencyCount = 1;
-	info.pDependencies = &dep;
-
-	VkResult res = vkCreateRenderPass(device, &info, NULL, rpass);
-	assert(res == VK_SUCCESS);
-}
-
 void create_pipel(VkDevice device,
 		  uint32_t shtage_ct,
 		  VkPipelineShaderStageCreateInfo *shtages,

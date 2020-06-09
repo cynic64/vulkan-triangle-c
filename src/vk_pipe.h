@@ -17,8 +17,6 @@ void create_layout(VkDevice device,
 		   VkDescriptorSetLayout *desc_layouts,
 		   VkPipelineLayout *layout);
 
-void create_rpass(VkDevice device, VkFormat format, VkRenderPass *rpass);
-
 /*
  * Creates a graphics pipeline.
  *

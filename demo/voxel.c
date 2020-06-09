@@ -8,6 +8,7 @@
 #include "../src/vk_vertex.h"
 #include "../src/vk_uniform.h"
 #include "../src/vk_rpass.h"
+#include "../src/vk_image.h"
 #include "../src/camera.h"
 
 #include <stdlib.h>
@@ -17,10 +18,67 @@
 #include <math.h>
 #include <unistd.h>
 
+/*
+ * DEFINES
+ */
 #define MAX_FRAMES_IN_FLIGHT 4
+#define DEPTH_FMT VK_FORMAT_D32_SFLOAT
+
+/*
+ * GLOBALS
+ */
 
 double mouse_x = 0;
 double mouse_y = 0;
+
+/*
+ * STRUCTS
+ */
+
+struct Mesh {
+	uint32_t vertex_ct;
+	struct Vertex3PosColor *vertices;
+	uint32_t index_ct;
+	uint32_t *indices;
+};
+
+// Indexed [z * width * height + y * width + x].
+struct VoxelWorld {
+	// x
+	uint32_t width;
+	// y
+	uint32_t height;
+	// z
+	uint32_t depth;
+
+	unsigned char *data;
+};
+
+/*
+ * FUNCTIONS
+ */
+
+// Mallocs.
+void voxel_world_to_mesh(struct VoxelWorld *world, struct Mesh *mesh);
+
+// Example:
+// "000|111\n"
+// "010|111\n"
+// "000|111\n"
+//
+// For a pyramid.
+//
+// Mallocs.
+void voxel_world_from_string(char *str, struct VoxelWorld *world);
+
+/*
+ * First query how many vertices/indices will be produced by calling with either
+ * vertices or indices being NULL. Call again after allocating memory for both
+ * vertices and indices.
+ */
+void gen_cube_mesh(float x, float y, float z, uint32_t idx_off,
+		   uint32_t *vertex_ct, uint32_t *index_ct,
+		   struct Vertex3PosColor *vertices, uint32_t *indices);
 
 // Returns the elapsed time in floating-point seconds
 double get_elapsed(struct timespec *s_time);
@@ -72,6 +130,9 @@ int main()
 	free(phys_devs);
 	free(props);
 
+	VkPhysicalDeviceMemoryProperties mem_props;
+	vkGetPhysicalDeviceMemoryProperties(phys_dev, &mem_props);
+
 	// Get queue family
 	uint32_t queue_fam = get_queue_fam(phys_dev);
 
@@ -91,7 +152,17 @@ int main()
 
 	// Render pass
 	VkRenderPass rpass;
-	rpass_basic(device, SW_FORMAT, &rpass);
+	rpass_with_depth(device, SW_FORMAT, VK_FORMAT_D32_SFLOAT, &rpass);
+
+	// Depth buffer
+	struct Image depth_image;
+	image_create(device, queue_fam, mem_props,
+		     DEPTH_FMT,
+		     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		     VK_IMAGE_ASPECT_DEPTH_BIT,
+		     swidth, sheight,
+		     &depth_image);
 
 	// Window
 	struct Window win;
@@ -99,7 +170,7 @@ int main()
 		      surface,
 		      queue_fam, queue,
 		      rpass,
-		      0, NULL,
+		      1, &depth_image.view,
 		      swidth, sheight,
 		      &win);
 
@@ -108,47 +179,42 @@ int main()
 	create_cpool(device, queue_fam, &cpool);
 
 	// Buffers
-	VkPhysicalDeviceMemoryProperties mem_props;
-	vkGetPhysicalDeviceMemoryProperties(phys_dev, &mem_props);
+	struct VoxelWorld world;
+	/*
+	voxel_world_from_string("000|111\n"
+				"000|011\n"
+				"010|111\n"
+				"000|111\n", &world);
+	*/
 
-	struct Vertex3PosColor vertices[] = {
-		// Top
-		{ .pos = {-1.0, 1.0, -1.0}, .color = {1.0, 0.0, 0.0} },
-		{ .pos = {1.0, 1.0, -1.0}, .color = {1.0, 0.0, 0.0} },
-		{ .pos = {-1.0, 1.0, 1.0}, .color = {1.0, 0.0, 0.0} },
-		{ .pos = {1.0, 1.0, 1.0}, .color = {1.0, 0.0, 0.0} },
-		// Bottom
-		{ .pos = {-1.0, -1.0, -1.0}, .color = {0.0, 1.0, 0.0} },
-		{ .pos = {1.0, -1.0, -1.0}, .color = {0.0, 1.0, 0.0} },
-		{ .pos = {-1.0, -1.0, 1.0}, .color = {0.0, 1.0, 0.0} },
-		{ .pos = {1.0, -1.0, 1.0}, .color = {0.0, 1.0, 0.0} },
-		// Left
-		{ .pos = {-1.0, -1.0, -1.0}, .color = {0.0, 0.0, 1.0} },
-		{ .pos = {-1.0, -1.0, 1.0}, .color = {0.0, 0.0, 1.0} },
-		{ .pos = {-1.0, 1.0, -1.0}, .color = {0.0, 0.0, 1.0} },
-		{ .pos = {-1.0, 1.0, 1.0}, .color = {0.0, 0.0, 1.0} },
-		// Right
-		{ .pos = {1.0, -1.0, -1.0}, .color = {0.0, 1.0, 1.0} },
-		{ .pos = {1.0, 1.0, -1.0}, .color = {0.0, 1.0, 1.0} },
-		{ .pos = {1.0, -1.0, 1.0}, .color = {0.0, 1.0, 1.0} },
-		{ .pos = {1.0, 1.0, 1.0}, .color = {0.0, 1.0, 1.0} },
-		// Front
-		{ .pos = {-1.0, -1.0, -1.0}, .color = {1.0, 0.0, 1.0} },
-		{ .pos = {-1.0, 1.0, -1.0}, .color = {1.0, 0.0, 1.0} },
-		{ .pos = {1.0, -1.0, -1.0}, .color = {1.0, 0.0, 1.0} },
-		{ .pos = {1.0, 1.0, -1.0}, .color = {1.0, 0.0, 1.0} },
-		// Back
-		{ .pos = {-1.0, -1.0, 1.0}, .color = {1.0, 1.0, 0.0} },
-		{ .pos = {1.0, -1.0, 1.0}, .color = {1.0, 1.0, 0.0} },
-		{ .pos = {-1.0, 1.0, 1.0}, .color = {1.0, 1.0, 0.0} },
-		{ .pos = {1.0, 1.0, 1.0}, .color = {1.0, 1.0, 0.0} },
-	};
-	uint32_t vertex_count = ARRAY_SIZE(vertices);
-	VkDeviceSize vertices_size = sizeof(vertices);
+	world.width = 32;
+	world.height = 32;
+	world.depth = 32;
+	world.data = malloc(world.width * world.height * world.depth);
+	for (int i = 0; i < world.width * world.height * world.depth; i++) {
+		world.data[i] = rand() % 2;
+	}
 
-	uint32_t indices[] = {0, 3, 1, 2, 3, 0, 4, 5, 7, 7, 6, 4, 8, 9, 11, 11, 10, 8, 12, 13, 15, 15, 14, 12, 16, 17, 19, 19, 18, 16, 20, 21, 23, 23, 22, 20};
-	uint32_t index_count = sizeof(indices) / sizeof(indices[0]);
-	VkDeviceSize indices_size = sizeof(indices);
+	/*
+	printf("Width: %d, height: %d, depth: %d\n",
+	      world.width, world.height, world.depth);
+	
+	printf("Data:\n");
+	for (int i = 0; i < world.width * world.height * world.depth; i++) {
+		printf(world.data[i] == 0 ? "0" : "1");
+	}
+	printf("\n");
+	*/
+
+	struct Mesh mesh;
+	voxel_world_to_mesh(&world, &mesh);
+
+	printf("Vertices: %d\n", mesh.vertex_ct);
+
+	printf("Indices: %d\n", mesh.index_ct);
+
+	VkDeviceSize vertices_size = mesh.vertex_ct * sizeof(mesh.vertices[0]);
+	VkDeviceSize indices_size = mesh.index_ct * sizeof(mesh.indices[0]);
 
 	// Staging
 	struct Buffer staging_buf;
@@ -160,7 +226,7 @@ int main()
 		      &staging_buf);
 
 	// Vertex
-	buffer_write(staging_buf, vertices_size, (void *) vertices);
+	buffer_write(staging_buf, vertices_size, (void *) mesh.vertices);
 
 	struct Buffer vbuf;
 	buffer_create(device,
@@ -179,7 +245,7 @@ int main()
 		    vbuf.handle);
 
 	// Index buffer
-	buffer_write(staging_buf, indices_size, (void *) indices);
+	buffer_write(staging_buf, indices_size, (void *) mesh.indices);
 
 	struct Buffer ibuf;
 	buffer_create(device,
@@ -294,7 +360,7 @@ int main()
 		     VERTEX_3_POS_COLOR_BINDINGS,
 		     VERTEX_3_POS_COLOR_ATTRIBUTE_CT,
 		     VERTEX_3_POS_COLOR_ATTRIBUTES,
-		     rpass, 0,
+		     rpass, 1,
 		     &pipel);
 
 	// Cleanup shader modules
@@ -310,7 +376,8 @@ int main()
 	}
 
 	// Clear values
-	VkClearValue clears[] = {{0.0f, 0.0f, 0.0f, 0.0f}};
+	VkClearValue clears[] = {{0.0f, 0.0f, 0.0f, 0.0f},
+				 {1.0f, 0}};	
 	uint32_t clear_ct = ARRAY_SIZE(clears);
 
 	// Timing
@@ -325,9 +392,23 @@ int main()
 	while (!glfwWindowShouldClose(gwin)) {
 		// Maybe recreate
 		if (must_recreate_swapchain) {
+			res = vkQueueWaitIdle(queue);
+			assert(res == VK_SUCCESS);
+			
 			get_dims(phys_dev, surface, &swidth, &sheight);
+
+			image_destroy(device, depth_image);
+			image_create(device, queue_fam, mem_props,
+				     DEPTH_FMT,
+				     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+				     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+				     VK_IMAGE_ASPECT_DEPTH_BIT,
+				     swidth, sheight,
+				     &depth_image);
+
 			window_recreate_swapchain(&win,
-						  0, NULL, swidth, sheight);
+						  1, &depth_image.view,
+						  swidth, sheight);
 
 			must_recreate_swapchain = 0;
 		}
@@ -390,7 +471,7 @@ int main()
 			    &sets[sync_set_idx].handle,
 			    vbuf.handle,
 			    ibuf.handle,
-			    index_count,
+			    mesh.index_ct,
 			    &cbuf);
 
 		cbufs[sync_set_idx] = cbuf;
@@ -476,6 +557,158 @@ int main()
 	glfw_cleanup(gwin);
 
 	return 0;
+}
+
+void voxel_world_to_mesh(struct VoxelWorld *world, struct Mesh *mesh)
+{
+	int w = world->width;
+	int h = world->height;
+	int d = world->depth;
+
+	// Allocate
+	int cell_ct = 0;
+	for (int i = 0; i < w * h * d; i++) {
+		if (world->data[i] != 0) cell_ct++;
+	}
+	printf("Cell count: %d\n", cell_ct);
+
+	int cube_vtx_ct;
+	int cube_idx_ct;
+	gen_cube_mesh(0.0f, 0.0f, 0.0f, 0,
+		      &cube_vtx_ct, &cube_idx_ct, NULL, NULL);
+
+	mesh->vertex_ct = cell_ct * cube_vtx_ct;
+	mesh->vertices = malloc(mesh->vertex_ct * sizeof(mesh->vertices[0]));
+	mesh->index_ct = cell_ct * cube_idx_ct;
+	mesh->indices = malloc(mesh->index_ct * sizeof(mesh->indices[0]));
+
+	// Fill
+	int vertex_idx = 0;
+	int index_idx = 0;
+	for (int z = 0; z < d; z++) {
+		for (int y = 0; y < h; y++) {
+			for (int x = 0; x < w; x++) {				
+				if (world->data[z * w * h + y * w + x] == 0)
+					continue;
+
+				gen_cube_mesh(x, y, z, vertex_idx, NULL, NULL,
+					      &mesh->vertices[vertex_idx],
+					      &mesh->indices[index_idx]);
+				vertex_idx += cube_vtx_ct;
+				index_idx += cube_idx_ct;
+			}
+		}
+	}
+}
+
+void voxel_world_from_string(char *str, struct VoxelWorld *world)
+{
+	int char_idx = 0;
+	int width = -1;
+	int height = -1;
+	int depth = 0;
+	char c;
+
+	// First pass to see how much to allocate
+	int size = 0;
+	while ((c = str[char_idx++]) != '\0') {
+		if (c != '|' && c != '\n') size++;
+	}
+
+	printf("Size: %d\n", size);
+
+	// Fill data
+	unsigned char *data = malloc(size * sizeof(data[0]));
+	assert(data != NULL);
+
+	int data_idx = 0;
+	char_idx = 0;
+	while ((c = str[char_idx++]) != '\0') {
+		if (c == '|') {
+			// Set width if it hasn't been set yet
+			if (width != -1) continue;
+			width = data_idx;
+		} else if (c == '\n') {
+			// Set height if it hasn't been set yet
+			if (height != -1) continue;
+			
+			assert(width > 0);
+			height = data_idx / width;
+		} else {
+			// Set data
+			data[data_idx++] = c - '0';
+		}
+	}
+
+	world->data = data;
+	world->width = width;
+	world->height = height;
+	world->depth = data_idx / width / height;
+}
+
+void gen_cube_mesh(float x, float y, float z, uint32_t idx_off,
+		   uint32_t *vertex_ct, uint32_t *index_ct,
+		   struct Vertex3PosColor *vertices, uint32_t *indices)
+{
+	const struct Vertex3PosColor base_vertices[] = {
+		// Top
+		{ .pos = {-0.5, 0.5, -0.5}, .color = {1.0, 0.0, 0.0} },
+		{ .pos = {0.5, 0.5, -0.5}, .color = {1.0, 0.0, 0.0} },
+		{ .pos = {-0.5, 0.5, 0.5}, .color = {1.0, 0.0, 0.0} },
+		{ .pos = {0.5, 0.5, 0.5}, .color = {1.0, 0.0, 0.0} },
+		// Bottom
+		{ .pos = {-0.5, -0.5, -0.5}, .color = {0.0, 1.0, 0.0} },
+		{ .pos = {0.5, -0.5, -0.5}, .color = {0.0, 1.0, 0.0} },
+		{ .pos = {-0.5, -0.5, 0.5}, .color = {0.0, 1.0, 0.0} },
+		{ .pos = {0.5, -0.5, 0.5}, .color = {0.0, 1.0, 0.0} },
+		// Left
+		{ .pos = {-0.5, -0.5, -0.5}, .color = {0.0, 0.0, 1.0} },
+		{ .pos = {-0.5, -0.5, 0.5}, .color = {0.0, 0.0, 1.0} },
+		{ .pos = {-0.5, 0.5, -0.5}, .color = {0.0, 0.0, 1.0} },
+		{ .pos = {-0.5, 0.5, 0.5}, .color = {0.0, 0.0, 1.0} },
+		// Right
+		{ .pos = {0.5, -0.5, -0.5}, .color = {0.0, 1.0, 1.0} },
+		{ .pos = {0.5, 0.5, -0.5}, .color = {0.0, 1.0, 1.0} },
+		{ .pos = {0.5, -0.5, 0.5}, .color = {0.0, 1.0, 1.0} },
+		{ .pos = {0.5, 0.5, 0.5}, .color = {0.0, 1.0, 1.0} },
+		// Front
+		{ .pos = {-0.5, -0.5, -0.5}, .color = {1.0, 0.0, 1.0} },
+		{ .pos = {-0.5, 0.5, -0.5}, .color = {1.0, 0.0, 1.0} },
+		{ .pos = {0.5, -0.5, -0.5}, .color = {1.0, 0.0, 1.0} },
+		{ .pos = {0.5, 0.5, -0.5}, .color = {1.0, 0.0, 1.0} },
+		// Back
+		{ .pos = {-0.5, -0.5, 0.5}, .color = {1.0, 1.0, 0.0} },
+		{ .pos = {0.5, -0.5, 0.5}, .color = {1.0, 1.0, 0.0} },
+		{ .pos = {-0.5, 0.5, 0.5}, .color = {1.0, 1.0, 0.0} },
+		{ .pos = {0.5, 0.5, 0.5}, .color = {1.0, 1.0, 0.0} },
+	};
+	
+	uint32_t base_indices[] = {0, 3, 1, 2, 3, 0, 4, 5, 7, 7, 6, 4, 8, 9, 11,
+				   11, 10, 8, 12, 13, 15, 15, 14, 12, 16, 17,
+				   19, 19, 18, 16, 20, 21, 23, 23, 22, 20};
+
+	// Maybe only return counts
+	if (vertices == NULL || indices == NULL) {
+		*vertex_ct = ARRAY_SIZE(base_vertices);
+		*index_ct = ARRAY_SIZE(base_indices);
+		return;
+	}
+
+	// Otherwise set vertices
+	for (int i = 0; i < ARRAY_SIZE(base_vertices); i++) {
+		struct Vertex3PosColor old = base_vertices[i];
+		vertices[i].pos[0] = old.pos[0] + x;
+		vertices[i].pos[1] = old.pos[1] + y;
+		vertices[i].pos[2] = old.pos[2] + z;
+		vertices[i].color[0] = old.color[0];
+		vertices[i].color[1] = old.color[1];
+		vertices[i].color[2] = old.color[2];
+	}
+
+	// And indices
+	for (int i = 0; i < ARRAY_SIZE(base_indices); i++) {
+		indices[i] = base_indices[i] + idx_off;
+	}
 }
 
 double get_elapsed(struct timespec *s_time) {
