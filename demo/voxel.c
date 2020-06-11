@@ -265,6 +265,7 @@ int main()
 
 	// Uniform buffer
 	struct OrbitCamera cam = cam_orbit_new(0.0f, 0.0f);
+	cam.distance = 64.0f;
 	mat4 uniform_data = {0};
 	uint32_t uniform_size = sizeof(uniform_data);
 	struct Buffer uniform_buf;
@@ -523,6 +524,7 @@ int main()
 	res = vkQueueWaitIdle(queue);
 	assert(res == VK_SUCCESS);
 
+	image_destroy(device, depth_image);
 	vkDestroyCommandPool(device, cpool, NULL);
 
 	window_cleanup(&win);

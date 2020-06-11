@@ -19,16 +19,15 @@ struct MouseTracker {
 // Uses a MouseTracker to calculate, given a mouse position, the mouse movement.
 // Converts the movement to the range -1..1 for each axis, where 1 or -1 is the
 // mouse moving from one edge of the screen to the other.
-void cam_mouse_diff(
-	struct MouseTracker *t,
-	double new_x, double new_y,
-	double *out_x, double *out_y
-	);
+void cam_mouse_diff(struct MouseTracker *t,
+		    double new_x, double new_y,
+		    double *out_x, double *out_y);
 
 struct OrbitCamera {
 	struct MouseTracker tracker;
 	float yaw;
 	float pitch;
+	float distance;
 };
 
 // Returns a new OrbitCamera.
@@ -37,12 +36,10 @@ struct OrbitCamera cam_orbit_new(double x, double y);
 
 // Stores a combined view and projection matrix into dest, given screen
 // dimensions and the current mouse coordinates
-void cam_orbit_mat(
-	struct OrbitCamera *c,
-	uint32_t swidth, uint32_t sheight,
-	double x, double y,
-	mat4 dest
-	);
+void cam_orbit_mat(struct OrbitCamera *c,
+		   uint32_t swidth, uint32_t sheight,
+		   double x, double y,
+		   mat4 dest);
 
 // Outputs a direction vector into <dest> with magnitude one with the given
 // pitch and yaw.

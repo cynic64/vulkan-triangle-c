@@ -3,6 +3,8 @@
 #include <math.h>
 #include <assert.h>
 
+#define DEFAULT_ORBIT_DISTANCE 8.0
+
 /* Helper function to avoid yaw angles of <0 or >2pi */
 void wrap(float min, float max, float *val);
 
@@ -45,6 +47,7 @@ struct OrbitCamera cam_orbit_new(double x, double y)
 	struct OrbitCamera self = {0};
 	self.tracker.prev_x = x;
 	self.tracker.prev_y = y;
+	self.distance = DEFAULT_ORBIT_DISTANCE;
 
 	return self;
 }
@@ -54,8 +57,6 @@ void cam_orbit_mat(struct OrbitCamera *c,
 		   double x, double y,
 		   mat4 dest)
 {
-	float distance = 16.0f;
-
 	// Update pitch and yaw
 	double x_diff, y_diff;
 	cam_mouse_diff(&c->tracker, x, y, &x_diff, &y_diff);
@@ -67,9 +68,9 @@ void cam_orbit_mat(struct OrbitCamera *c,
 	// View matrix
 	vec3 dir;
 	cam_get_dir_vec(c->yaw, c->pitch, dir);
-	dir[0] *= distance;
-	dir[1] *= distance;
-	dir[2] *= distance;
+	dir[0] *= c->distance;
+	dir[1] *= c->distance;
+	dir[2] *= c->distance;
 
 	vec3 center = {0.0f, 0.0f, 0.0f};
 	mat4 view;
