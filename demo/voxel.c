@@ -25,13 +25,6 @@
 #define DEPTH_FMT VK_FORMAT_D32_SFLOAT
 
 /*
- * GLOBALS
- */
-
-double mouse_x = 0;
-double mouse_y = 0;
-
-/*
  * STRUCTS
  */
 
@@ -83,12 +76,6 @@ void gen_cube_mesh(float x, float y, float z, uint32_t idx_off,
 // Returns the elapsed time in floating-point seconds
 double get_elapsed(struct timespec *s_time);
 
-static void glfw_cursor_callback(GLFWwindow *win, double x, double y)
-{
-	mouse_x = x;
-	mouse_y = y;
-}
-
 int main()
 {
 	// Used for error checking on VK functions throughout
@@ -96,9 +83,6 @@ int main()
 
 	// Initialize GLFW
 	GLFWwindow *gwin = init_glfw();
-
-	// Mouse settings
-	glfwSetCursorPosCallback(gwin, glfw_cursor_callback);
 	glfwSetInputMode(gwin, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	// Create instance
@@ -187,30 +171,18 @@ int main()
 				"000|111\n", &world);
 	*/
 
-	world.width = 32;
-	world.height = 32;
-	world.depth = 32;
+	world.width = 64;
+	world.height = 64;
+	world.depth = 64;
 	world.data = malloc(world.width * world.height * world.depth);
 	for (int i = 0; i < world.width * world.height * world.depth; i++) {
 		world.data[i] = rand() % 2;
 	}
 
-	/*
-	printf("Width: %d, height: %d, depth: %d\n",
-	      world.width, world.height, world.depth);
-	
-	printf("Data:\n");
-	for (int i = 0; i < world.width * world.height * world.depth; i++) {
-		printf(world.data[i] == 0 ? "0" : "1");
-	}
-	printf("\n");
-	*/
-
 	struct Mesh mesh;
 	voxel_world_to_mesh(&world, &mesh);
 
 	printf("Vertices: %d\n", mesh.vertex_ct);
-
 	printf("Indices: %d\n", mesh.index_ct);
 
 	VkDeviceSize vertices_size = mesh.vertex_ct * sizeof(mesh.vertices[0]);
@@ -262,8 +234,11 @@ int main()
 			   staging_buf.handle,ibuf.handle);
 
 	// Uniform buffer
-	struct OrbitCamera cam = cam_orbit_new(0.0f, 0.0f);
-	cam.distance = 64.0f;
+	double mouse_x, mouse_y;
+	glfwGetCursorPos(gwin, &mouse_x, &mouse_y);
+	struct FlyCamera cam = cam_fly_new(-16.0f, -16.0f, -16.0f,
+					   0.0f, 0.0f,
+					   mouse_x, mouse_y);
 	mat4 uniform_data = {0};
 	uint32_t uniform_size = sizeof(uniform_data);
 	struct Buffer uniform_buf;
@@ -382,6 +357,9 @@ int main()
 	// Timing
 	struct timespec s_time;
 	clock_gettime(CLOCK_MONOTONIC, &s_time);
+	
+	struct timespec last_frame_time = s_time;
+	
 	int f_count = 0;
 
 	// Swapchain
@@ -425,7 +403,14 @@ int main()
 		assert(res == VK_SUCCESS);
 
 		// Update uniform buffer
-		cam_orbit_mat(&cam, swidth, sheight, mouse_x, mouse_y, uniform_data);
+		double delta = get_elapsed(&last_frame_time);
+		clock_gettime(CLOCK_MONOTONIC, &last_frame_time);
+		
+		glfwGetCursorPos(gwin, &mouse_x, &mouse_y);
+		
+		cam_fly_update(&cam, gwin, mouse_x, mouse_y, delta);
+		cam_fly_mat(&cam, swidth, sheight, uniform_data);
+		
 		buffer_write(uniform_buf, uniform_size, uniform_data);
 
 		// Acquire image
