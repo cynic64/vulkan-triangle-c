@@ -238,11 +238,10 @@ int main()
 
 	// Copy staging to vertex
 	copy_buffer_buffer(device,
-		    queue,
-		    cpool,
-		    vertices_size,
-		    staging_buf.handle,
-		    vbuf.handle);
+			   queue,
+			   cpool,
+			   vertices_size,
+			   staging_buf.handle,vbuf.handle);
 
 	// Index buffer
 	buffer_write(staging_buf, indices_size, (void *) mesh.indices);
@@ -257,11 +256,10 @@ int main()
 
 	// Copy staging to index
 	copy_buffer_buffer(device,
-		    queue,
-		    cpool,
-		    indices_size,
-		    staging_buf.handle,
-		    ibuf.handle);
+			   queue,
+			   cpool,
+			   indices_size,
+			   staging_buf.handle,ibuf.handle);
 
 	// Uniform buffer
 	struct OrbitCamera cam = cam_orbit_new(0.0f, 0.0f);

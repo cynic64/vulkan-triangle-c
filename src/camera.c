@@ -63,7 +63,7 @@ void cam_orbit_mat(struct OrbitCamera *c,
 	c->yaw += x_diff;
 	c->pitch += y_diff;
 	wrap(-M_PI, M_PI, &c->yaw);
-	clamp(-M_PI * 0.5f, M_PI * 0.5f, &c->pitch);
+	clamp(-M_PI * 0.49f, M_PI * 0.49f, &c->pitch);
 
 	// View matrix
 	vec3 dir;
