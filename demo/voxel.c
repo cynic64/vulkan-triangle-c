@@ -145,6 +145,7 @@ int main()
 		     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 		     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		     VK_IMAGE_ASPECT_DEPTH_BIT,
+		     VK_SAMPLE_COUNT_1_BIT,
 		     swidth, sheight,
 		     &depth_image);
 
@@ -334,7 +335,7 @@ int main()
 		     VERTEX_3_POS_COLOR_BINDINGS,
 		     VERTEX_3_POS_COLOR_ATTRIBUTE_CT,
 		     VERTEX_3_POS_COLOR_ATTRIBUTES,
-		     rpass, 1,
+		     rpass, 1, VK_SAMPLE_COUNT_1_BIT,
 		     &pipel);
 
 	// Cleanup shader modules
@@ -380,6 +381,7 @@ int main()
 				     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 				     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 				     VK_IMAGE_ASPECT_DEPTH_BIT,
+				     VK_SAMPLE_COUNT_1_BIT,
 				     swidth, sheight,
 				     &depth_image);
 

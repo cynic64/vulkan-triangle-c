@@ -294,7 +294,7 @@ int main()
 		     VERTEX_3_POS_COLOR_BINDINGS,
 		     VERTEX_3_POS_COLOR_ATTRIBUTE_CT,
 		     VERTEX_3_POS_COLOR_ATTRIBUTES,
-		     rpass, 0,
+		     rpass, 0, VK_SAMPLE_COUNT_1_BIT,
 		     &pipel);
 
 	// Cleanup shader modules

@@ -79,6 +79,7 @@ int main()
 		     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
 		     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		     VK_IMAGE_ASPECT_COLOR_BIT,
+		     VK_SAMPLE_COUNT_1_BIT,
 		     IMAGE_W, IMAGE_H,
 		     &image);
 	
@@ -200,7 +201,7 @@ int main()
 		     layout,
 		     VERTEX_2_POS_COLOR_BINDING_CT, VERTEX_2_POS_COLOR_BINDINGS,
 		     VERTEX_2_POS_COLOR_ATTRIBUTE_CT, VERTEX_2_POS_COLOR_ATTRIBUTES,
-		     rpass, 0,
+		     rpass, 0, VK_SAMPLE_COUNT_1_BIT,
 		     &pipel);
 
 	// Cleanup shader modules
