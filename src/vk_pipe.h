@@ -30,7 +30,8 @@ void create_pipel(VkDevice device,
 		  VkVertexInputBindingDescription *binding_descs,
 		  uint32_t attr_ct,
 		  VkVertexInputAttributeDescription *attr_descs,
-		  VkRenderPass rpass, int has_pipe,
+		  VkRenderPass rpass,
+		  int has_depth, VkSampleCountFlagBits samples,
 		  VkPipeline *pipel);
 
 void create_shtage(VkShaderModule shmod,

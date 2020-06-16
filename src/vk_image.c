@@ -12,6 +12,7 @@ void image_create(VkDevice device,
 		  VkImageUsageFlags usage,
 		  VkMemoryPropertyFlags req_props,
 		  VkImageAspectFlagBits aspect,
+		  VkSampleCountFlagBits samples,
 		  uint32_t width, uint32_t height,
 		  struct Image *image)
 {
@@ -19,6 +20,7 @@ void image_create(VkDevice device,
 			    queue_fam,
 			    format,
 			    usage,
+			    samples,
 			    width, height,
 			    &image->handle);
 
@@ -179,6 +181,7 @@ void image_handle_create(VkDevice device,
 			 uint32_t queue_fam,
 			 VkFormat format,
 			 VkImageUsageFlags usage,
+			 VkSampleCountFlagBits samples,
 			 uint32_t width, uint32_t height,
 			 VkImage *image)
 {
@@ -193,7 +196,7 @@ void image_handle_create(VkDevice device,
 		},
 		.mipLevels = 1,
 		.arrayLayers = 1,
-		.samples = VK_SAMPLE_COUNT_1_BIT,
+		.samples = samples,
 		.tiling = VK_IMAGE_TILING_OPTIMAL,
 		.usage = usage,
 		.queueFamilyIndexCount = 1,

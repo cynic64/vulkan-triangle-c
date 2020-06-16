@@ -21,6 +21,7 @@ void image_create(VkDevice device,
 		  VkMemoryPropertyFlags req_props,
 		  VkImageAspectFlagBits aspect,
 		  uint32_t width, uint32_t height,
+		  VkSampleCountFlagBits samples,
 		  struct Image *image);
 
 /*
@@ -83,6 +84,7 @@ void image_handle_create(VkDevice device,
 			 uint32_t queue_fam,
 			 VkFormat format,
 			 VkImageUsageFlags usage,
+			 VkSampleCountFlagBits samples,
 			 uint32_t width, uint32_t height,
 			 VkImage *image);
 

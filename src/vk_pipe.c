@@ -67,7 +67,8 @@ void create_pipel(VkDevice device,
 		  VkVertexInputBindingDescription *binding_descs,
 		  uint32_t attr_ct,
 		  VkVertexInputAttributeDescription *attr_descs,
-		  VkRenderPass rpass, int has_depth,
+		  VkRenderPass rpass,
+		  int has_depth, VkSampleCountFlagBits samples,
 		  VkPipeline *pipel)
 {
 	VkPipelineVertexInputStateCreateInfo vertex_input = {0};
@@ -95,7 +96,7 @@ void create_pipel(VkDevice device,
 	VkPipelineMultisampleStateCreateInfo multisampling = {0};
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 	multisampling.sampleShadingEnable = VK_FALSE;
-	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	multisampling.rasterizationSamples = samples;
 
 	VkPipelineColorBlendAttachmentState blend_attach = {0};
 	blend_attach.colorWriteMask = VK_COLOR_COMPONENT_R_BIT
