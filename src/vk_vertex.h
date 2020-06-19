@@ -41,7 +41,6 @@ static VkVertexInputAttributeDescription VERTEX_3_POS_COLOR_ATTRIBUTES[] = {
 static uint32_t VERTEX_3_POS_COLOR_ATTRIBUTE_CT = 2;
 
 /* Vertex3PosNormal */
-
 struct Vertex3PosNormal {
 	vec3 pos;
 	vec3 normal;
@@ -73,6 +72,46 @@ static VkVertexInputAttributeDescription VERTEX_3_POS_NORMAL_ATTRIBUTES[] = {
 };
 
 static uint32_t VERTEX_3_POS_NORMAL_ATTRIBUTE_CT = 2;
+
+/* Vertex3PosNormalTex */
+struct Vertex3PosNormalTex {
+	vec3 pos;
+	vec3 normal;
+	vec2 tex;
+};
+
+static VkVertexInputBindingDescription VERTEX_3_POS_NORMAL_TEX_BINDINGS[] = {
+	{
+		.binding = 0,
+		.stride = sizeof(struct Vertex3PosNormalTex),
+		.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+	}
+};
+
+static uint32_t VERTEX_3_POS_NORMAL_TEX_BINDING_CT = 1;
+
+static VkVertexInputAttributeDescription VERTEX_3_POS_NORMAL_TEX_ATTRIBUTES[] = {
+	{
+		.location = 0,
+		.binding = 0,
+		.format = VK_FORMAT_R32G32B32_SFLOAT,
+		.offset = offsetof(struct Vertex3PosNormalTex, pos)
+	},
+	{
+		.location = 1,
+		.binding = 0,
+		.format = VK_FORMAT_R32G32B32_SFLOAT,
+		.offset = offsetof(struct Vertex3PosNormalTex, normal)
+	},
+	{
+		.location = 2,
+		.binding = 0,
+		.format = VK_FORMAT_R32G32_SFLOAT,
+		.offset = offsetof(struct Vertex3PosNormalTex, tex)
+	}
+};
+
+static uint32_t VERTEX_3_POS_NORMAL_TEX_ATTRIBUTE_CT = 3;
 
 /* Vertex2PosColor */
 
