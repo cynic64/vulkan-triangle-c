@@ -422,29 +422,14 @@ int main() {
 		cbufs[sync_set_idx] = cbuf;
 
 		// Submit
-		VkSemaphore wait_sems[] = {image_avail_sem};
-		VkSemaphore signal_sems[] = {render_done_sem};
-		VkPipelineStageFlags wait_stages[] =
-			{VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-
-		VkSubmitInfo submit_info = {0};
-		submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submit_info.waitSemaphoreCount = 1;
-		submit_info.pWaitSemaphores = wait_sems;
-		submit_info.pWaitDstStageMask = wait_stages;
-		submit_info.commandBufferCount = 1;
-		submit_info.pCommandBuffers = &cbuf;
-		submit_info.signalSemaphoreCount = 1;
-		submit_info.pSignalSemaphores = signal_sems;
-
-		res = vkQueueSubmit(queue, 1, &submit_info, render_done_fence);
-		assert(res == VK_SUCCESS);
+		submit_synced(queue, image_avail_sem, render_done_sem,
+			      render_done_fence, cbuf);
 
 		// Present
 		VkPresentInfoKHR present_info = {0};
 		present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		present_info.waitSemaphoreCount = 1;
-		present_info.pWaitSemaphores = signal_sems;
+		present_info.pWaitSemaphores = &render_done_sem;
 		present_info.swapchainCount = 1;
 		present_info.pSwapchains = &win.swapchain;
 		present_info.pImageIndices = &image_idx;

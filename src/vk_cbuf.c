@@ -141,3 +141,24 @@ void submit_syncless(VkDevice device, VkQueue queue,
 
 	vkFreeCommandBuffers(device, cpool, 1, &cbuf);
 }
+
+void submit_synced(VkQueue queue,
+		   VkSemaphore s_wait, VkSemaphore s_signal, VkFence f_signal,
+		   VkCommandBuffer cbuf)
+{
+	VkPipelineStageFlags wait_stages[] =
+		{VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
+	VkSubmitInfo submit_info = {0};
+	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submit_info.waitSemaphoreCount = 1;
+	submit_info.pWaitSemaphores = &s_wait;
+	submit_info.pWaitDstStageMask = wait_stages;
+	submit_info.commandBufferCount = 1;
+	submit_info.pCommandBuffers = &cbuf;
+	submit_info.signalSemaphoreCount = 1;
+	submit_info.pSignalSemaphores = &s_signal;
+
+	VkResult res = vkQueueSubmit(queue, 1, &submit_info, f_signal);
+	assert(res == VK_SUCCESS);
+}
