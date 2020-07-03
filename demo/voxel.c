@@ -9,6 +9,7 @@
 #include "../src/vk_uniform.h"
 #include "../src/vk_rpass.h"
 #include "../src/vk_image.h"
+#include "../src/vk_sync_pool.h"
 #include "../src/camera.h"
 
 #include <stdlib.h>
@@ -256,7 +257,6 @@ int main()
 	// Synchronization primitives
 	VkSemaphore *image_avail_sems = malloc(sizeof(image_avail_sems[0]) * MAX_FRAMES_IN_FLIGHT);
 	VkSemaphore *render_done_sems = malloc(sizeof(render_done_sems[0]) * MAX_FRAMES_IN_FLIGHT);
-	VkFence *render_done_fences = malloc(sizeof(render_done_fences[0]) * MAX_FRAMES_IN_FLIGHT);
 	VkFence *swapchain_fences = malloc(sizeof(swapchain_fences[0]) * win.image_ct);
 
 	// Sets (one for each frame in flight)
@@ -272,7 +272,6 @@ int main()
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		create_sem(device, &image_avail_sems[i]);
 		create_sem(device, &render_done_sems[i]);
-		create_fence(device, VK_FENCE_CREATE_SIGNALED_BIT, &render_done_fences[i]);
 
 		set_create(device, dpool,
 			   desc_ct, desc_types,
@@ -355,6 +354,10 @@ int main()
 				 {1.0f, 0}};	
 	uint32_t clear_ct = ARRAY_SIZE(clears);
 
+	// SyncPool struct (handles render-done fences)
+	struct SyncPool sync_pool;
+	sync_pool_create(device, MAX_FRAMES_IN_FLIGHT, &sync_pool);
+
 	// Timing
 	struct timespec s_time;
 	clock_gettime(CLOCK_MONOTONIC, &s_time);
@@ -395,14 +398,13 @@ int main()
 		glfwPollEvents();
 
 		// Choose sync primitives
-		int sync_set_idx = f_count % MAX_FRAMES_IN_FLIGHT;
+		VkFence render_done_fence;
+		uint32_t sync_set_idx;
+		sync_pool_acquire(device, &sync_pool,
+				  &render_done_fence, &sync_set_idx);
+		
 		VkSemaphore image_avail_sem = image_avail_sems[sync_set_idx];
 		VkSemaphore render_done_sem = render_done_sems[sync_set_idx];
-		VkFence render_done_fence = render_done_fences[sync_set_idx];
-
-		// Wait for previous frame using this sync set to complete
-		res = vkWaitForFences(device, 1, &render_done_fence, VK_TRUE, UINT64_MAX);
-		assert(res == VK_SUCCESS);
 
 		// Update uniform buffer
 		double delta = get_elapsed(&last_frame_time);
@@ -463,29 +465,14 @@ int main()
 		cbufs[sync_set_idx] = cbuf;
 
 		// Submit
-		VkSemaphore wait_sems[] = {image_avail_sem};
-		VkSemaphore signal_sems[] = {render_done_sem};
-		VkPipelineStageFlags wait_stages[] =
-			{VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-
-		VkSubmitInfo submit_info = {0};
-		submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submit_info.waitSemaphoreCount = 1;
-		submit_info.pWaitSemaphores = wait_sems;
-		submit_info.pWaitDstStageMask = wait_stages;
-		submit_info.commandBufferCount = 1;
-		submit_info.pCommandBuffers = &cbuf;
-		submit_info.signalSemaphoreCount = 1;
-		submit_info.pSignalSemaphores = signal_sems;
-
-		res = vkQueueSubmit(queue, 1, &submit_info, render_done_fence);
-		assert(res == VK_SUCCESS);
+		submit_synced(queue, image_avail_sem, render_done_sem,
+			      render_done_fence, cbuf);
 
 		// Present
 		VkPresentInfoKHR present_info = {0};
 		present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		present_info.waitSemaphoreCount = 1;
-		present_info.pWaitSemaphores = signal_sems;
+		present_info.pWaitSemaphores = &render_done_sem;
 		present_info.swapchainCount = 1;
 		present_info.pSwapchains = &win.swapchain;
 		present_info.pImageIndices = &image_idx;
@@ -514,6 +501,8 @@ int main()
 
 	window_cleanup(&win);
 
+	sync_pool_destroy(device, sync_pool);
+
 	vkDestroyPipeline(device, pipel, NULL);
 	vkDestroyPipelineLayout(device, layout, NULL);
 
@@ -522,7 +511,6 @@ int main()
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		vkDestroySemaphore(device, image_avail_sems[i], NULL);
 		vkDestroySemaphore(device, render_done_sems[i], NULL);
-		vkDestroyFence(device, render_done_fences[i], NULL);
 
 		set_destroy(device, sets[i]);
 	}

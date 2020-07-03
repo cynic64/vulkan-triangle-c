@@ -9,6 +9,7 @@
 #include "../src/vk_uniform.h"
 #include "../src/vk_image.h"
 #include "../src/vk_rpass.h"
+#include "../src/vk_sync_pool.h"
 #include "../src/camera.h"
 #include "../src/obj.h"
 
@@ -214,7 +215,6 @@ int main() {
 	// Synchronization primitives
 	VkSemaphore *image_avail_sems = malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
 	VkSemaphore *render_done_sems = malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
-	VkFence *render_done_fences = malloc(sizeof(VkFence) * MAX_FRAMES_IN_FLIGHT);
 	VkFence *swapchain_fences = malloc(sizeof(VkFence) * win.image_ct);
 
 	// Sets (one for each frame in flight)
@@ -230,7 +230,6 @@ int main() {
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		create_sem(device, &image_avail_sems[i]);
 		create_sem(device, &render_done_sems[i]);
-		create_fence(device, VK_FENCE_CREATE_SIGNALED_BIT, &render_done_fences[i]);
 
 		set_create(device, dpool,
 			   desc_ct, desc_types,
@@ -314,6 +313,10 @@ int main() {
 		cbufs[i] = NULL;
 	}
 
+	// SyncPool struct
+	struct SyncPool sync_pool;
+	sync_pool_create(device, MAX_FRAMES_IN_FLIGHT, &sync_pool);
+
 	// Timing
 	struct timespec s_time;
 	clock_gettime(CLOCK_MONOTONIC, &s_time);
@@ -363,14 +366,13 @@ int main() {
 		glfwPollEvents();
 
 		// Choose sync primitives
-		int sync_set_idx = f_count % MAX_FRAMES_IN_FLIGHT;
+		VkFence render_done_fence;
+		uint32_t sync_set_idx;
+		sync_pool_acquire(device, &sync_pool,
+				  &render_done_fence, &sync_set_idx);
+		
 		VkSemaphore image_avail_sem = image_avail_sems[sync_set_idx];
 		VkSemaphore render_done_sem = render_done_sems[sync_set_idx];
-		VkFence render_done_fence = render_done_fences[sync_set_idx];
-
-		// Wait for previous frame using this sync set to complete
-		res = vkWaitForFences(device, 1, &render_done_fence, VK_TRUE, UINT64_MAX);
-		assert(res == VK_SUCCESS);
 
 		// Update uniform buffer
 		cam_orbit_mat(&cam, swidth, sheight, mouse_x, mouse_y, uniform_data);
@@ -459,13 +461,14 @@ int main() {
 	vkDestroyCommandPool(device, cpool, NULL);
 	window_cleanup(&win);
 
+	sync_pool_destroy(device, sync_pool);
+
 	vkDestroyPipeline(device, pipel, NULL);
 	vkDestroyPipelineLayout(device, layout, NULL);
 
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		vkDestroySemaphore(device, image_avail_sems[i], NULL);
 		vkDestroySemaphore(device, render_done_sems[i], NULL);
-		vkDestroyFence(device, render_done_fences[i], NULL);
 
 		set_destroy(device, sets[i]);
 	}
