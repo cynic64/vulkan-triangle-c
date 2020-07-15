@@ -450,9 +450,15 @@ int main()
 	while (!glfwWindowShouldClose(gwin)) {
 		// Maybe recreate
 		if (must_recreate_swapchain) {
+			vkQueueWaitIdle(queue);
+			
 			get_dims(phys_dev, surface, &swidth, &sheight);
 			window_recreate_swapchain(&win,
 						  0, NULL, swidth, sheight);
+
+			for (int i = 0; i < win.image_ct; i++) {
+				swapchain_fences[i] = NULL;
+			}
 
 			must_recreate_swapchain = 0;
 		}
@@ -469,7 +475,8 @@ int main()
 		VkSemaphore render_done_sem = render_done_sems[sync_set_idx];
 
 		// Update uniform buffer
-		cam_orbit_mat(&cam, swidth, sheight, mouse_x, mouse_y, uniform_data);
+		cam_orbit_mat(&cam,
+			      swidth, sheight, mouse_x, mouse_y, uniform_data);
 		buffer_write(uniform_buf, uniform_size, uniform_data);
 
 		// Free previously used command buffer
@@ -481,17 +488,16 @@ int main()
 		// Acquire image
 		uint32_t image_idx;
 		VkFramebuffer fb;
-		int ac_res = window_acquire(&win, image_avail_sem, &image_idx, &fb);
-
-		if (ac_res != 0) {
-			must_recreate_swapchain = 1;
-			continue;
-		}
+		must_recreate_swapchain =
+			window_acquire(&win,
+				       image_avail_sem, &image_idx,
+				       0, NULL, &fb);
 
 		// Wait for swapchain fence
 		VkFence swapchain_fence = swapchain_fences[image_idx];
 		if (swapchain_fence != NULL) {
-			res = vkWaitForFences(device, 1, &swapchain_fence, VK_TRUE, UINT64_MAX);
+			res = vkWaitForFences(device, 1, &swapchain_fence,
+					      VK_TRUE, UINT64_MAX);
 			assert(res == VK_SUCCESS);
 		}
 
