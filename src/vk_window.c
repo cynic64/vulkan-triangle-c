@@ -140,24 +140,40 @@ void window_recreate_swapchain(struct Window *win,
 int window_acquire(struct Window *win,
 		   VkSemaphore sem,
 		   uint32_t *image_idx,
+		   uint32_t extra_view_ct, VkImageView *extra_views,
 		   VkFramebuffer *fb)
+
 {
-	VkResult res = vkAcquireNextImageKHR(win->device,
-					     win->swapchain,
-					     UINT64_MAX,
-					     sem,
-					     NULL,
-					     image_idx);
-	
-	if (res == VK_ERROR_OUT_OF_DATE_KHR) {
-		return 1;
-	} else {
+	int was_recreated = 0;
+
+	while (1) {
+		VkResult res = vkAcquireNextImageKHR(win->device,
+						     win->swapchain,
+						     UINT64_MAX,
+						     sem,
+						     NULL,
+						     image_idx);
+
+		if (res == VK_ERROR_OUT_OF_DATE_KHR) {
+			printf("Recr\n");
+			uint32_t swidth, sheight;
+			get_dims(win->phys_dev, win->surface,
+				 &swidth, &sheight);
+
+			window_recreate_swapchain(win,
+						  extra_view_ct, extra_views,
+						  swidth, sheight);
+
+			was_recreated = 1;
+
+			continue;
+		}
+
 		assert(res == VK_SUCCESS);
+		*fb = win->fbs[*image_idx];
+
+		return was_recreated;
 	}
-
-	*fb = win->fbs[*image_idx];
-
-	return 0;
 }
 
 void window_cleanup(struct Window *win)
@@ -181,7 +197,7 @@ void create_swapchain(VkPhysicalDevice phys_dev,
 		      uint32_t queue_fam,
 		      VkSurfaceKHR surface,
 		      VkSwapchainKHR *swapchain,
-		      uint32_t width,	uint32_t height)
+		      uint32_t width, uint32_t height)
 {
 	// Ensure surface has presentation support
 	VkBool32 support = VK_FALSE;

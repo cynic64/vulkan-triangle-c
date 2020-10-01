@@ -65,7 +65,8 @@ void window_recreate_swapchain(struct Window *win,
  * Acquire a swapchain image.
  *
  * Returns 0 on success, 1 if the swapchain is out of date, and aborts
- * otherwise.
+ * otherwise. Will recreate swapchain and framebuffers if it is out of date, but
+ * other resources such as a depth buffer may need to be recreated by the user.
  *
  * win: Pointer to an existing Window struct (will be modified)
  * sem: Semaphore to signal on image acquisition
@@ -75,6 +76,7 @@ void window_recreate_swapchain(struct Window *win,
 int window_acquire(struct Window *win,
 		   VkSemaphore sem,
 		   uint32_t *image_idx,
+		   uint32_t extra_view_ct, VkImageView *extra_views,
 		   VkFramebuffer *fb);
 
 /*
